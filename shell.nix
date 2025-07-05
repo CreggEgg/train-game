@@ -14,7 +14,7 @@ mkShell rec {
     mold
   ];
   shellHook = ''
-  export LD_LIBRARY_PATH="${lib.makeLibraryPath buildInputs}";
+    export LD_LIBRARY_PATH="${lib.makeLibraryPath buildInputs}";
   '';
   LD_LIBRARY_PATH=lib.makeLibraryPath buildInputs;
 }

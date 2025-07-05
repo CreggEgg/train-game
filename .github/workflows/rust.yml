@@ -11,9 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - uses: cachix/install-nix-action@v31
+
     - name: Build
-      run: cargo build --verbose --release
+      run: nix-shell --run "cargo build --verbose --release"
+
     - name: Run tests
-      run: cargo test --verbose --release
+      run: nix-shell --run "cargo test --verbose --release"
+
     - name: check formatting
-      run: cargo fmt --check
+      run: nix-shell --run "cargo fmt --check"

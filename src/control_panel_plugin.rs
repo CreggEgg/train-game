@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{train_plugin::AdvanceEvent, GameState, InGameState};
+use crate::{GameState, InGameState, train_plugin::AdvanceEvent};
 
 pub fn control_panel_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_control_panel);

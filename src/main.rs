@@ -5,6 +5,7 @@ use bevy_asset_loader::{
 };
 
 mod camera_plugin;
+mod control_panel_plugin;
 mod debug_plugin;
 mod train_plugin;
 mod world_plugin;
@@ -39,6 +40,7 @@ fn main() {
             train_plugin::train_plugin,
             camera_plugin::camera_plugin,
             world_plugin::world_plugin,
+            control_panel_plugin::control_panel_plugin,
         ))
         .init_state::<InGameState>()
         .init_state::<GameState>()

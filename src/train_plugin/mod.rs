@@ -28,7 +28,7 @@ fn spawn_train(
         .spawn((Visibility::default(), Transform::default()))
         .with_children(|parent| {
             parent.spawn((
-                Sprite::from_image(image_assets.train_car.clone()),
+                Sprite::from_image(image_assets.train_locomotive.clone()),
                 Name::new("Locomotive"),
                 Locomotive,
             ));

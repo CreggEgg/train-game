@@ -28,6 +28,8 @@ enum InGameState {
 struct ImageAssets {
     #[asset(path = "traincar.png")]
     train_car: Handle<Image>,
+    #[asset(path = "trainlocomotive.png")]
+    train_locomotive: Handle<Image>,
 }
 
 fn main() {

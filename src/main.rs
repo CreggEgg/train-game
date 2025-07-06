@@ -36,6 +36,8 @@ struct ImageAssets {
     stop: Handle<Image>,
     #[asset(path = "farm.png")]
     farm: Handle<Image>,
+    #[asset(path = "rail.png")]
+    rail: Handle<Image>,
 }
 
 fn main() {

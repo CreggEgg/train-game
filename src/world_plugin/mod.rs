@@ -33,9 +33,10 @@ pub fn world_plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Loading), generate_world)
         .add_systems(
             FixedUpdate,
-            ((move_world_objects, spawn_stop_assets)
+            ((move_world_objects, spawn_stop_assets, loop_rails)
                 .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running)))),
         )
+        .add_systems(OnEnter(GameState::InGame), spawn_rails)
         .add_observer(
             |_trigger: Trigger<GenerateNextStop>,
              mut next_stop: ResMut<NextStop>,
@@ -92,7 +93,7 @@ fn spawn_stop_assets(
         commands.spawn((
             Sprite::from_image(image_assets.stop.clone()),
             NextStopImage,
-            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., 10.),
+            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., -10.),
             WorldObject(next_stop.distance),
         ));
     }
@@ -111,5 +112,30 @@ fn move_world_objects(
         //         - ((obj.1.0 - train.single().unwrap().distance) / METERS_PER_UNIT),
         //     ((obj.1.0 - train.single().unwrap().distance) / METERS_PER_UNIT)
         // );
+    }
+}
+
+#[derive(Component)]
+struct Rail;
+
+const RAIL_WIDTH: f32 = 480.0 / METERS_PER_UNIT;
+const NUM_RAILS: usize = 8;
+
+fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
+    for i in 0..NUM_RAILS {
+        commands.spawn((
+            Sprite::from_image(image_assets.rail.clone()),
+            Transform::default(),
+            WorldObject((i as f32 - 4.) * RAIL_WIDTH),
+            Rail,
+        ));
+    }
+}
+
+fn loop_rails(mut rails: Query<(&mut WorldObject, &Rail)>, train: Query<&Train>) {
+    for (mut world_object, rail) in &mut rails {
+        if world_object.0 - train.single().unwrap().distance < -25.0 {
+            world_object.0 += RAIL_WIDTH * NUM_RAILS as f32;
+        }
     }
 }

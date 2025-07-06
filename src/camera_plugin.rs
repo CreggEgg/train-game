@@ -18,5 +18,6 @@ fn spawn_camera(mut commands: Commands) {
             scale: 10.0,
             ..OrthographicProjection::default_2d()
         }),
+        Transform::from_xyz(0., 300.0, 0.),
     ));
 }

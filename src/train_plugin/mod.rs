@@ -123,7 +123,7 @@ fn move_train(
     train.velocity = train.velocity.min(train_stats.max_velocity);
 
     train.distance += train.velocity * time.delta_secs();
-    info!("Distance: {}", train.distance);
+    // info!("Distance: {}", train.distance);
 
     if next_stop.distance - train.distance < 0.1 {
         info!(

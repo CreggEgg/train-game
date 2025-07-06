@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::{Rng, SeedableRng};
 
-use crate::{GameState, train_plugin::Train};
+use crate::{GameState, ImageAssets, InGameState, train_plugin::Train};
 
 #[derive(Clone)]
 pub enum Stop {
@@ -18,6 +18,7 @@ pub struct GameWorld {
 pub struct NextStop {
     pub stop: Stop,
     pub distance: f32,
+    pub spawned: bool,
 }
 #[derive(Resource)]
 pub struct CurrentStop(pub Option<Stop>);
@@ -27,6 +28,11 @@ pub struct GenerateNextStop;
 
 pub fn world_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Loading), generate_world)
+        .add_systems(
+            FixedUpdate,
+            ((move_world_objects, spawn_stop_assets)
+                .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running)))),
+        )
         .add_observer(
             |_trigger: Trigger<GenerateNextStop>,
              mut next_stop: ResMut<NextStop>,
@@ -56,5 +62,51 @@ fn generate_next_stop(rng: &mut impl Rng, current_distance: f32) -> NextStop {
     NextStop {
         stop: Stop::Town,
         distance,
+        spawned: false,
+    }
+}
+
+#[derive(Component)]
+struct WorldObject(f32);
+
+#[derive(Component)]
+struct NextStopImage;
+
+const METERS_PER_UNIT: f32 = 100.0;
+
+fn spawn_stop_assets(
+    mut commands: Commands,
+    train: Query<&Train>,
+    mut next_stop: ResMut<NextStop>,
+    image_assets: Res<ImageAssets>,
+) {
+    let train = train.single().unwrap();
+    let horizontal_distance = 100.0;
+    if !next_stop.spawned
+        && next_stop.distance - train.distance < horizontal_distance * METERS_PER_UNIT
+    {
+        next_stop.spawned = true;
+        commands.spawn((
+            Sprite::from_image(image_assets.stop.clone()),
+            NextStopImage,
+            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., 0.),
+            WorldObject(next_stop.distance),
+        ));
+    }
+}
+
+fn move_world_objects(
+    mut objs: Query<(&mut Transform, &WorldObject)>,
+    train: Query<&Train>,
+    time: Res<Time>,
+) {
+    for mut obj in &mut objs {
+        obj.0.translation.x = -(obj.1.0 - train.single().unwrap().distance) * METERS_PER_UNIT;
+        // info!(
+        //     "Error: {:.2} | Actual distance: {:.2}",
+        //     obj.0.translation.x.abs()
+        //         - ((obj.1.0 - train.single().unwrap().distance) / METERS_PER_UNIT),
+        //     ((obj.1.0 - train.single().unwrap().distance) / METERS_PER_UNIT)
+        // );
     }
 }

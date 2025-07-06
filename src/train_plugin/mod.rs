@@ -113,9 +113,16 @@ fn move_train(
     train.distance += train.velocity * time.delta_secs();
     info!("Distance: {}", train.distance);
 
-    if next_stop.distance - train.distance < 10.0 {
+    if next_stop.distance - train.distance < 0.1 {
+        info!(
+            "{} - {} = {}",
+            next_stop.distance,
+            train.distance,
+            next_stop.distance - train.distance
+        );
         info!("Stopping");
         next_state.set(TrainState::Stopped);
+        train.velocity = 0.0;
 
         current_stop.0 = Some(next_stop.stop.clone());
 

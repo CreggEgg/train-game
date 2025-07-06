@@ -1,5 +1,5 @@
 
-cargo fmt
+nix-shell --run "cargo fmt"
 
 if ! git diff --exit-code; then
     git add -A

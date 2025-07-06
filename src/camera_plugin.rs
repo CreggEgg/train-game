@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::GameState;
 
-pub fn camera_plugin(mut app: &mut App) {
+pub fn camera_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_camera);
 }
 

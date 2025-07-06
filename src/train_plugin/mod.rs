@@ -7,7 +7,7 @@ pub struct TrainStats {
     length: usize,
 }
 
-pub fn train_plugin(mut app: &mut App) {
+pub fn train_plugin(app: &mut App) {
     app.insert_resource(TrainStats { length: 1 })
         .add_systems(OnEnter(GameState::InGame), spawn_train);
 }
@@ -18,6 +18,10 @@ const CAR_SIZE: f32 = 140.0;
 pub struct Locomotive;
 #[derive(Component)]
 pub struct TrainCar;
+#[derive(Component)]
+pub struct Train {
+    pub distance: f32,
+}
 
 fn spawn_train(
     mut commands: Commands,
@@ -25,7 +29,11 @@ fn spawn_train(
     train_stats: Res<TrainStats>,
 ) {
     commands
-        .spawn((Visibility::default(), Transform::default()))
+        .spawn((
+            Visibility::default(),
+            Transform::default(),
+            Train { distance: 0. },
+        ))
         .with_children(|parent| {
             parent.spawn((
                 Sprite::from_image(image_assets.train_locomotive.clone()),

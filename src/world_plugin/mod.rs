@@ -5,12 +5,12 @@ use crate::GameState;
 
 pub enum Stop {
     Town { distance: f32 },
-    InitialStop
+    InitialStop,
 }
 
 #[derive(Resource)]
 pub struct GameWorld {
-    rng: rand_chacha::ChaCha8Rng
+    rng: rand_chacha::ChaCha8Rng,
 }
 
 #[derive(Resource)]
@@ -18,7 +18,7 @@ pub struct NextStop(Stop);
 #[derive(Resource)]
 pub struct CurrentStop(Option<Stop>);
 
-pub fn world_plugin(mut app: &mut App) {
+pub fn world_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::Loading), generate_world);
 }
 
@@ -30,6 +30,6 @@ fn generate_world(mut commands: Commands) {
     commands.insert_resource(NextStop(Stop::Town {
         distance: rng.random::<f32>(),
     }));
-    
-    commands.insert_resource(GameWorld{rng: rng});
+
+    commands.insert_resource(GameWorld { rng });
 }

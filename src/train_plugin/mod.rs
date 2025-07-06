@@ -124,6 +124,8 @@ fn move_train(
         info!("Stopping");
         next_state.set(TrainState::Stopped);
 
+        train.velocity = 0.0;
+
         current_stop.0 = Some(next_stop.stop.clone());
 
         commands.trigger(GenerateNextStop);

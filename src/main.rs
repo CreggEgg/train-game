@@ -1,5 +1,51 @@
 use bevy::prelude::*;
+use bevy_asset_loader::{
+    asset_collection::AssetCollection,
+    loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
+};
+
+mod camera_plugin;
+mod debug_plugin;
+mod train_plugin;
+mod world_plugin;
+
+#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
+enum GameState {
+    #[default]
+    MainMenu,
+    Loading,
+    InGame,
+}
+
+#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
+enum InGameState {
+    Running,
+    #[default]
+    Paused,
+}
+
+#[derive(AssetCollection, Resource)]
+struct ImageAssets {
+    #[asset(path = "traincar.png")]
+    train_car: Handle<Image>,
+}
 
 fn main() {
-    App::new().add_plugins(DefaultPlugins).run();
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins((
+            train_plugin::train_plugin,
+            camera_plugin::camera_plugin,
+            world_plugin::world_plugin,
+        ))
+        .init_state::<InGameState>()
+        .init_state::<GameState>()
+        .add_loading_state(
+            LoadingState::new(GameState::Loading)
+                .continue_to_state(GameState::InGame)
+                .load_collection::<ImageAssets>(),
+        );
+    #[cfg(debug_assertions)]
+    app.add_plugins(debug_plugin::debug_plugin);
+    app.run();
 }

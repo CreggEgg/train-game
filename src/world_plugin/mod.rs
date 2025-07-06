@@ -3,6 +3,8 @@ use rand::{Rng, SeedableRng};
 
 use crate::{GameState, ImageAssets, InGameState, train_plugin::Train};
 
+mod stop_plugin;
+
 #[derive(Clone)]
 pub enum Stop {
     Town,
@@ -27,7 +29,8 @@ pub struct CurrentStop(pub Option<Stop>);
 pub struct GenerateNextStop;
 
 pub fn world_plugin(app: &mut App) {
-    app.add_systems(OnEnter(GameState::Loading), generate_world)
+    app /* .add_plugins(stop_plugin::stop_plugin) */
+        .add_systems(OnEnter(GameState::Loading), generate_world)
         .add_systems(
             FixedUpdate,
             ((move_world_objects, spawn_stop_assets)

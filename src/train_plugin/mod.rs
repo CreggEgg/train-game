@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets,
+    build_plugin::BuildLocation,
     world_plugin::{CurrentStop, GenerateNextStop, NextStop},
 };
 
@@ -85,6 +86,7 @@ fn spawn_train(
                     Name::new(format!("Car{i}")),
                     TrainCar,
                     Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
+                    children![(BuildLocation(Vec2::new(-40.0, 0.0)), Transform::default())],
                 ));
             }
         });

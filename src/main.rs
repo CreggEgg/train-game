@@ -4,6 +4,7 @@ use bevy_asset_loader::{
     loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
 };
 
+mod build_plugin;
 mod camera_plugin;
 mod control_panel_plugin;
 mod debug_plugin;
@@ -33,6 +34,8 @@ struct ImageAssets {
     train_locomotive: Handle<Image>,
     #[asset(path = "stop.png")]
     stop: Handle<Image>,
+    #[asset(path = "farm.png")]
+    farm: Handle<Image>,
 }
 
 fn main() {
@@ -43,6 +46,7 @@ fn main() {
             camera_plugin::camera_plugin,
             world_plugin::world_plugin,
             control_panel_plugin::control_panel_plugin,
+            build_plugin::build_plugin,
         ))
         .init_state::<InGameState>()
         .init_state::<GameState>()

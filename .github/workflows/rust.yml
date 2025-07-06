@@ -23,4 +23,4 @@ jobs:
       run: nix-shell --run "cargo test --verbose --release"
 
     - name: check formatting
-      run: nix-shell --run "cargo fmt --check"
+      run: bash .github/workflows/check-fmt-and-push.sh

@@ -19,8 +19,8 @@ enum GameState {
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 enum InGameState {
-    Running,
     #[default]
+    Running,
     Paused,
 }
 

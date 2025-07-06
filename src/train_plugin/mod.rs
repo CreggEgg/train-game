@@ -86,7 +86,10 @@ fn spawn_train(
                     Name::new(format!("Car{i}")),
                     TrainCar,
                     Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
-                    children![(BuildLocation(Vec2::new(-40.0, 0.0)), Transform::default())],
+                    children![
+                        (BuildLocation(Vec2::new(-30.0, 0.0)), Transform::default()),
+                        (BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())
+                    ],
                 ));
             }
         });

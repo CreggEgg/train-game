@@ -92,7 +92,7 @@ fn spawn_stop_assets(
         commands.spawn((
             Sprite::from_image(image_assets.stop.clone()),
             NextStopImage,
-            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., 0.),
+            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., 10.),
             WorldObject(next_stop.distance),
         ));
     }

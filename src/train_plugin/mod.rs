@@ -5,6 +5,8 @@ use crate::{
     world_plugin::{CurrentStop, GenerateNextStop, NextStop},
 };
 
+mod train_speed_ui;
+
 #[derive(Resource)]
 pub struct TrainStats {
     length: usize,
@@ -28,6 +30,11 @@ pub fn train_plugin(app: &mut App) {
     .add_event::<AdvanceEvent>()
     .init_state::<TrainState>()
     .add_systems(OnEnter(GameState::InGame), spawn_train)
+    .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
+    .add_systems(
+        FixedPostUpdate,
+        train_speed_ui::update_train_speed.run_if(in_state(GameState::InGame)),
+    )
     .add_systems(
         FixedUpdate,
         (

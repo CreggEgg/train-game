@@ -15,7 +15,7 @@ fn spawn_camera(mut commands: Commands) {
             scaling_mode: bevy::render::camera::ScalingMode::FixedVertical {
                 viewport_height: 100.0,
             },
-            scale: 5.0,
+            scale: 10.0,
             ..OrthographicProjection::default_2d()
         }),
     ));

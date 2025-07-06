@@ -1,0 +1,22 @@
+use bevy::prelude::*;
+
+use crate::GameState;
+
+pub fn camera_plugin(mut app: &mut App) {
+    app.add_systems(OnEnter(GameState::InGame), spawn_camera);
+}
+
+fn spawn_camera(mut commands: Commands) {
+    commands.spawn((
+        Name::new("Camera"),
+        IsDefaultUiCamera,
+        Camera2d,
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: bevy::render::camera::ScalingMode::FixedVertical {
+                viewport_height: 100.0,
+            },
+            scale: 5.0,
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
+}

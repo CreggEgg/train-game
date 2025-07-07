@@ -5,7 +5,7 @@ use crate::{
     build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING},
 };
 
-const SKIP_MAIN_MENU: bool = false;
+const SKIP_MAIN_MENU: bool = true;
 const LOG_DISTANCE: bool = true;
 const BUILD_LOCATION_GIZMO: bool = true;
 

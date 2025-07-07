@@ -28,7 +28,7 @@ fn spawn_main_menu(mut commands: Commands) {
         BackgroundColor(Color::BLACK),
         children![
             (
-                Text::new("TRAIN GAME"),
+                Text::new("THE ENGINE OF TOMORROW"),
                 TextFont {
                     font_size: 128.0,
                     ..Default::default()

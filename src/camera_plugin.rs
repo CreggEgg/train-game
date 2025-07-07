@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState,
-    train_plugin::{CAR_SIZE, MaxPixelHeightOfTrain, TrainStats},
+    train_plugin::{MaxPixelHeightOfTrain, TrainStats},
 };
 
 #[derive(Default, Resource)]

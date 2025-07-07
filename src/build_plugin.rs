@@ -107,7 +107,7 @@ fn update_ghost(
     image_assets: Res<ImageAssets>,
 ) {
     let mut ghost = ghost.single_mut().unwrap();
-    ghost.image = building_type.get_texture(&*image_assets);
+    ghost.image = building_type.get_texture(&image_assets);
 }
 
 #[derive(Component)]
@@ -144,7 +144,7 @@ fn spawn_blueprint_window(
             for building_type in BuildingType::iterator() {
                 parent.spawn((
                     ImageNode::from_atlas_image(
-                        building_type.get_texture(&*image_assets),
+                        building_type.get_texture(&image_assets),
                         texture_atlas.clone(),
                     ),
                     Node {
@@ -255,7 +255,7 @@ fn on_build(
         let parent = parents.get(*child_of).unwrap();
         let building = commands
             .spawn((
-                Sprite::from_image(building_type.get_texture(&*image_assets)),
+                Sprite::from_image(building_type.get_texture(&image_assets)),
                 Transform::from_translation(offset.extend(4.0)),
                 Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
             ))

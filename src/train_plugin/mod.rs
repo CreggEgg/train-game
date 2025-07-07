@@ -2,17 +2,22 @@ use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets,
-    build_plugin::BuildLocation,
+    build_plugin::{BuildLocation, Building},
     world_plugin::{CurrentStop, GenerateNextStop, NextStop},
 };
 
 mod train_speed_ui;
 
+#[derive(Resource, Default)]
+pub struct MaxPixelHeightOfTrain {
+    pub height: f32,
+}
+
 #[derive(Resource)]
 pub struct TrainStats {
-    length: usize,
-    acceleration: f32,
-    max_velocity: f32,
+    pub length: usize,
+    pub acceleration: f32,
+    pub max_velocity: f32,
 }
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
@@ -31,6 +36,7 @@ pub fn train_plugin(app: &mut App) {
     .add_event::<AdvanceEvent>()
     .init_state::<TrainState>()
     .add_systems(OnEnter(GameState::InGame), spawn_train)
+    .init_resource::<MaxPixelHeightOfTrain>()
     .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
     .add_systems(
         FixedPostUpdate,
@@ -42,10 +48,14 @@ pub fn train_plugin(app: &mut App) {
             start_advancing.run_if(in_state(TrainState::Stopped)),
             move_train.run_if(in_state(TrainState::Advancing)),
         ),
+    )
+    .add_systems(
+        FixedUpdate,
+        update_train_height.run_if(in_state(GameState::InGame)),
     );
 }
 
-const CAR_SIZE: f32 = 140.0;
+pub const CAR_SIZE: f32 = 140.0;
 
 #[derive(Component)]
 pub struct Locomotive;
@@ -138,5 +148,34 @@ fn move_train(
         current_stop.0 = Some(next_stop.stop.clone());
 
         commands.trigger(GenerateNextStop);
+    }
+}
+
+fn update_train_height(
+    mut height: ResMut<MaxPixelHeightOfTrain>,
+    changed_comp: Query<&GlobalTransform, (Changed<GlobalTransform>, With<Building>)>,
+    removed_comp: RemovedComponents<Building>,
+    buildings: Query<&GlobalTransform, With<Building>>,
+) {
+    for changed in changed_comp.iter() {
+        let t = changed.translation();
+
+        if t.y > height.height {
+            height.height = t.y;
+        }
+    }
+
+    if !removed_comp.is_empty() {
+        let mut nh = 0.0f32;
+
+        for i in buildings {
+            nh = nh.max(i.translation().y)
+        }
+
+        // not updating if not changed because performance stuff
+        // (in case someone does change detection on the height)
+        if nh != height.height {
+            height.height = nh;
+        }
     }
 }

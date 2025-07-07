@@ -33,8 +33,8 @@ pub fn world_plugin(app: &mut App) {
         .add_systems(OnEnter(GameState::Loading), generate_world)
         .add_systems(
             FixedUpdate,
-            ((move_world_objects, spawn_stop_assets)
-                .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running)))),
+            (move_world_objects, spawn_stop_assets)
+                .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
         )
         .add_observer(
             |_trigger: Trigger<GenerateNextStop>,

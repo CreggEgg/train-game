@@ -2,7 +2,7 @@ use core::f32;
 
 use bevy::{math::FloatPow, prelude::*, window::PrimaryWindow};
 
-use crate::{GameState, ImageAssets, InGameState, train_plugin::TrainCar};
+use crate::{GameState, ImageAssets, InGameState};
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 pub enum BuildState {
@@ -16,6 +16,9 @@ pub struct BuildLocation(pub Vec2);
 
 #[derive(Component)]
 struct GhostBuilding;
+
+#[derive(Component)]
+pub struct Building;
 
 pub fn build_plugin(app: &mut App) {
     app.init_state::<BuildState>()
@@ -113,7 +116,7 @@ fn on_build(
             .spawn((
                 Sprite::from_image(image_assets.farm.clone()),
                 Transform::from_translation(offset.extend(4.0)),
-                // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+                Building, // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
             ))
             .id();
         commands.entity(parent).add_child(building);

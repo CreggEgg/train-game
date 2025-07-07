@@ -59,7 +59,7 @@ pub fn spawn_goblins(
                             Sprite::from_color(Color::srgb(0.0, 1.0, 1.0), Vec2::ONE),
                             Transform {
                                 translation: Vec3 {
-                                    x: (i as f32 / t as f32) * spread - SPREAD,
+                                    x: ((i as f32 + 0.5) / t as f32) * spread - SPREAD,
                                     y: train_height.height + HEIGHT_ABOVE_TRAIN,
                                     z: 0.0,
                                 },

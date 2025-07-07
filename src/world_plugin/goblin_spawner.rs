@@ -1,5 +1,7 @@
 use crate::{
-    control_panel_plugin::AdvanceBlocker, goblins::Goblin, train_plugin::{MaxPixelHeightOfTrain, TrainStats}
+    control_panel_plugin::AdvanceBlocker,
+    goblins::Goblin,
+    train_plugin::{MaxPixelHeightOfTrain, TrainStats},
 };
 use bevy::prelude::*;
 
@@ -65,7 +67,7 @@ pub fn spawn_goblins(
                                 scale: Vec2::new(10.0, 10.0).extend(1.0),
                                 ..default()
                             },
-                            AdvanceBlocker
+                            AdvanceBlocker,
                         ));
                     }
                 }

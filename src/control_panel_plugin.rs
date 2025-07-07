@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{GameState, InGameState, build_plugin::BuildState, train_plugin::AdvanceEvent};
+use crate::{
+    GameState, InGameState, build_plugin::BuildState, train_plugin::AdvanceEvent,
+    world_plugin::NextStop,
+};
 
 pub fn control_panel_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_control_panel)
@@ -9,6 +12,11 @@ pub fn control_panel_plugin(app: &mut App) {
             (advance_button, build_button)
                 .run_if(in_state(GameState::InGame))
                 .run_if(in_state(InGameState::Running)),
+        )
+        .add_systems(
+            Update,
+            update_next_town_display
+                .run_if(resource_changed::<NextStop>.and(in_state(GameState::InGame))),
         )
         .add_systems(
             OnEnter(BuildState::Building),
@@ -64,28 +72,34 @@ fn spawn_control_panel(mut commands: Commands) {
                     // margin: UiRect::AUTO.with_left(Val::Px(0.)).with_right(Val::Px(0.)),
                     ..Default::default()
                 },
-                BackgroundColor(Color::srgb(0., 1., 0.)),
+                BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
+                BorderRadius::MAX,
                 AdvanceButton,
                 Button,
                 children![Text::new("Advance")]
             ),
+            (NextTownDisplay, Text::new("Next town: {}")),
             (
                 Node {
-                    width: Val::Px(160.0),
+                    width: Val::Px(180.0),
                     height: Val::Percent(100.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     // margin: UiRect::AUTO.with_left(Val::Px(0.)).with_right(Val::Px(0.)),
                     ..Default::default()
                 },
-                BackgroundColor(Color::srgb(0., 1., 0.)),
+                BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
                 BuildButton::StartBuilding,
+                BorderRadius::MAX,
                 Button,
                 children![Text::new("Build")]
             )
         ],
     ));
 }
+
+#[derive(Component)]
+struct NextTownDisplay;
 
 #[derive(Component)]
 pub struct AdvanceBlocker;
@@ -118,4 +132,11 @@ fn build_button(
             });
         }
     }
+}
+
+fn update_next_town_display(
+    mut next_town_display: Query<&mut Text, With<NextTownDisplay>>,
+    next_stop: Res<NextStop>,
+) {
+    **next_town_display.single_mut().unwrap() = format!("Next town: {}", next_stop.name);
 }

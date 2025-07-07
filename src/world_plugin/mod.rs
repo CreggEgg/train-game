@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use rand::{Rng, SeedableRng, seq::IndexedMutRandom};
+use rand::{
+    Rng, SeedableRng,
+    seq::{IndexedMutRandom, IndexedRandom},
+};
 
 use crate::{
     GameState, ImageAssets, InGameState,
@@ -58,6 +61,12 @@ impl Stop {
             }
         }
     }
+    fn generate_name(&self, rng: &mut impl Rng) -> String {
+        match self {
+            Stop::Town | Self::Initial => generate_town_name(rng),
+            Stop::GoblinAttack { waves } => "Goblin Ambush".into(),
+        }
+    }
 
     fn generate_random<R: Rng>(rng: &mut R) -> Self {
         let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 2] = [
@@ -72,6 +81,16 @@ impl Stop {
 
         stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
     }
+}
+
+const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South"];
+const SECOND_HALVES: &[&'static str] = &[" Upon Trent", "sbury", "ceston", "chester"];
+
+fn generate_town_name(rng: &mut impl Rng) -> String {
+    let mut out = String::new();
+    out.push_str(FIRST_HALVES.choose(rng).unwrap());
+    out.push_str(SECOND_HALVES.choose(rng).unwrap());
+    out
 }
 
 fn generate_waves(rng: &mut impl Rng) -> Vec<Vec<GoblinType>> {
@@ -96,6 +115,7 @@ pub struct NextStop {
     pub stop: Stop,
     pub distance: f32,
     pub spawned: bool,
+    pub name: String,
 }
 #[derive(Resource)]
 pub struct CurrentStop(pub Option<Stop>);
@@ -104,7 +124,7 @@ pub struct CurrentStop(pub Option<Stop>);
 pub struct GenerateNextStop;
 
 pub fn world_plugin(app: &mut App) {
-    app /* .add_plugins(stop_plugin::stop_plugin) */
+    app.add_plugins(stop_plugin::stop_plugin)
         .add_systems(OnEnter(GameState::Loading), generate_world)
         .add_systems(
             FixedUpdate,
@@ -145,9 +165,11 @@ fn generate_next_stop(rng: &mut impl Rng, current_distance: f32) -> NextStop {
         30.0..=70.0, /*units now in meters but i made these very small to make it easy to test*/
     ) + current_distance;
     info!("Random f32: {}", distance);
+    let stop = Stop::generate_random(rng);
 
     NextStop {
-        stop: Stop::generate_random(rng),
+        name: stop.generate_name(rng),
+        stop,
         distance,
         spawned: false,
     }
@@ -224,6 +246,7 @@ fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
             Transform::default(),
             WorldObject((i as f32 - 4.) * RAIL_WIDTH),
             Rail,
+            // children![Sprite::from_image(image_assets.ground.clone()),],
         ));
     }
 }

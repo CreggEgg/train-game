@@ -11,6 +11,7 @@ mod control_panel_plugin;
 mod debug_plugin;
 mod goblins;
 mod main_menu;
+mod resources_plugin;
 mod train_plugin;
 mod world_plugin;
 
@@ -45,6 +46,10 @@ struct ImageAssets {
     rail: Handle<Image>,
     #[asset(path = "housing.png")]
     housing: Handle<Image>,
+    #[asset(path = "Booth.png")]
+    booth: Handle<Image>,
+    #[asset(path = "BoothCard.png")]
+    booth_card: Handle<Image>,
 }
 
 fn main() {
@@ -57,6 +62,7 @@ fn main() {
             control_panel_plugin::control_panel_plugin,
             build_plugin::build_plugin,
             main_menu::main_menu_plugin,
+            resources_plugin::resources_plugin,
         ))
         .init_state::<InGameState>()
         .init_state::<GameState>()

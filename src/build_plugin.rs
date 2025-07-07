@@ -138,7 +138,6 @@ fn spawn_blueprint_window(
                 margin: UiRect::top(Val::Px(10.0)),
                 ..Default::default()
             },
-            BackgroundColor(Color::BLACK),
         ))
         .with_children(|parent| {
             for building_type in BuildingType::iterator() {
@@ -149,14 +148,39 @@ fn spawn_blueprint_window(
                     ),
                     Node {
                         width: Val::Px(142.0),
-                        height: Val::Px(142.0),
-                        bottom: Val::Px(0.0),
-
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
                         ..Default::default()
                     },
-                    BackgroundColor(bevy::color::palettes::css::ANTIQUE_WHITE.into()),
-                    BluePrintButton(building_type),
-                    Button,
+                    children![
+                        (
+                            ImageNode::from_atlas_image(
+                                building_type.get_texture(&*image_assets),
+                                texture_atlas.clone(),
+                            ),
+                            Node {
+                                width: Val::Px(142.0),
+                                height: Val::Px(142.0),
+                                bottom: Val::Px(0.0),
+
+                                ..Default::default()
+                            },
+                            BluePrintButton(building_type),
+                            Button,
+                        ),
+                        (
+                            Node {
+                                width: Val::Percent(100.0),
+                                display: Display::Flex,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+
+                                ..default()
+                            },
+                            children![Text::new("Blueprint"),],
+                        ),
+                    ],
                 ));
             }
         });

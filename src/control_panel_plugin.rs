@@ -87,15 +87,19 @@ fn spawn_control_panel(mut commands: Commands) {
     ));
 }
 
+#[derive(Component)]
+pub struct AdvanceBlocker;
+
 fn advance_button(
     interaction_query: Query<
         &Interaction,
         (Changed<Interaction>, With<Button>, With<AdvanceButton>),
     >,
+    blockers: Query<&AdvanceBlocker>,
     mut ev: EventWriter<AdvanceEvent>,
 ) {
     for interaction in &interaction_query {
-        if *interaction == Interaction::Pressed {
+        if *interaction == Interaction::Pressed && blockers.iter().len() == 0 {
             info!("Sending advance event");
             ev.write(AdvanceEvent);
         }

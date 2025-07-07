@@ -1,4 +1,4 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
-pub struct Goblin {}
+pub struct Goblin;

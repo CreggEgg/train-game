@@ -50,6 +50,8 @@ struct ImageAssets {
     booth: Handle<Image>,
     #[asset(path = "BoothCard.png")]
     booth_card: Handle<Image>,
+    #[asset(path = "DebugBuilding.png")]
+    debug_building: Handle<Image>,
 }
 
 fn main() {

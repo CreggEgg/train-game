@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 
 use crate::{
-    GameState, InGameState, build_plugin::BuildState, train_plugin::AdvanceEvent,
+    GameState, InGameState,
+    build_plugin::BuildState,
+    train_plugin::{AdvanceEvent, Train},
     world_plugin::NextStop,
 };
 
@@ -138,5 +140,5 @@ fn update_next_town_display(
     mut next_town_display: Query<&mut Text, With<NextTownDisplay>>,
     next_stop: Res<NextStop>,
 ) {
-    **next_town_display.single_mut().unwrap() = format!("Next town: {}", next_stop.name);
+    **next_town_display.single_mut().unwrap() = format!("Next town: {}", next_stop.name,);
 }

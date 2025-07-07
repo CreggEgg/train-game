@@ -2,7 +2,7 @@ use core::f32;
 
 use bevy::{math::FloatPow, prelude::*, window::PrimaryWindow};
 
-use crate::{GameState, ImageAssets, InGameState};
+use crate::{GameState, ImageAssets, InGameState, resources_plugin::Inventory};
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 pub enum BuildState {
@@ -15,6 +15,7 @@ pub enum BuildState {
 pub enum BuildingType {
     Housing,
     Farm,
+    Storage,
 }
 
 impl BuildingType {
@@ -22,17 +23,19 @@ impl BuildingType {
         match self {
             BuildingType::Housing => image_assets.housing.clone(),
             BuildingType::Farm => image_assets.farm.clone(),
+            _ => image_assets.debug_building.clone(),
         }
     }
     fn get_build_locations(&self) -> Vec<Vec2> {
         match self {
             BuildingType::Housing => vec![Vec2::new(0., 40.)],
             BuildingType::Farm => vec![],
+            BuildingType::Storage => vec![Vec2::new(0., 40.)],
         }
     }
 
     fn iterator() -> impl Iterator<Item = Self> {
-        [Self::Housing, Self::Farm].into_iter()
+        [Self::Housing, Self::Farm, Self::Storage].into_iter()
     }
 }
 
@@ -142,10 +145,6 @@ fn spawn_blueprint_window(
         .with_children(|parent| {
             for building_type in BuildingType::iterator() {
                 parent.spawn((
-                    ImageNode::from_atlas_image(
-                        building_type.get_texture(&image_assets),
-                        texture_atlas.clone(),
-                    ),
                     Node {
                         width: Val::Px(142.0),
                         display: Display::Flex,
@@ -277,18 +276,23 @@ fn on_build(
     } in ev.read()
     {
         let parent = parents.get(*child_of).unwrap();
-        let building = commands
-            .spawn((
-                Sprite::from_image(building_type.get_texture(&image_assets)),
-                Transform::from_translation(offset.extend(4.0)),
-                Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
-            ))
-            .with_children(|parent| {
-                for build_location in building_type.get_build_locations() {
-                    parent.spawn((BuildLocation(build_location), Transform::default()));
-                }
-            })
-            .id();
+        let mut building = commands.spawn((
+            Sprite::from_image(building_type.get_texture(&image_assets)),
+            Transform::from_translation(offset.extend(4.0)),
+            Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+        ));
+        building.with_children(|parent| {
+            for build_location in building_type.get_build_locations() {
+                parent.spawn((BuildLocation(build_location), Transform::default()));
+            }
+        });
+        match building_type {
+            BuildingType::Storage => {
+                building.insert(Inventory::default());
+            }
+            _ => {}
+        }
+        let building = building.id();
         commands.entity(parent).add_child(building);
     }
 }

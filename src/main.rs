@@ -42,6 +42,8 @@ struct ImageAssets {
     farm: Handle<Image>,
     #[asset(path = "rail.png")]
     rail: Handle<Image>,
+    #[asset(path = "housing.png")]
+    housing: Handle<Image>,
 }
 
 fn main() {

@@ -11,6 +11,31 @@ pub enum BuildState {
     NotBuilding,
 }
 
+#[derive(Resource, Clone, Copy)]
+pub enum BuildingType {
+    Housing,
+    Farm,
+}
+
+impl BuildingType {
+    fn get_texture(&self, image_assets: &ImageAssets) -> Handle<Image> {
+        match self {
+            BuildingType::Housing => image_assets.housing.clone(),
+            BuildingType::Farm => image_assets.farm.clone(),
+        }
+    }
+    fn get_build_locations(&self) -> Vec<Vec2> {
+        match self {
+            BuildingType::Housing => vec![Vec2::new(0., 40.)],
+            BuildingType::Farm => vec![],
+        }
+    }
+
+    fn iterator() -> impl Iterator<Item = Self> {
+        [Self::Housing, Self::Farm].into_iter()
+    }
+}
+
 #[derive(Component)]
 pub struct BuildLocation(pub Vec2);
 
@@ -18,42 +43,137 @@ pub struct BuildLocation(pub Vec2);
 struct GhostBuilding;
 
 #[derive(Component)]
-pub struct Building;
+pub struct Building(BuildingType);
 
 pub fn build_plugin(app: &mut App) {
     app.init_state::<BuildState>()
+        .insert_resource(BuildingType::Farm)
         .add_event::<BuildEvent>()
         .add_systems(
             Update,
-            construct_buildings.run_if(
+            (construct_buildings, change_selected_building).run_if(
                 in_state(GameState::InGame)
                     .and(in_state(InGameState::Running))
                     .and(in_state(BuildState::Building)),
             ),
         )
         .add_systems(
+            FixedUpdate,
+            update_ghost.run_if(
+                in_state(BuildState::Building)
+                    .and(in_state(GameState::InGame))
+                    .and(resource_changed::<BuildingType>),
+            ),
+        )
+        .add_systems(
             OnEnter(BuildState::Building),
-            |mut ghost: Query<&mut Visibility, With<GhostBuilding>>| {
-                *ghost.single_mut().unwrap() = Visibility::Visible;
+            |mut ghost: Query<&mut Visibility, With<BuildMenuItem>>| {
+                for mut build_menu_item in &mut ghost {
+                    *build_menu_item = Visibility::Visible;
+                }
             },
         )
         .add_systems(
             OnExit(BuildState::Building),
-            |mut ghost: Query<&mut Visibility, With<GhostBuilding>>| {
-                *ghost.single_mut().unwrap() = Visibility::Hidden;
+            |mut ghost: Query<&mut Visibility, With<BuildMenuItem>>| {
+                for mut build_menu_item in &mut ghost {
+                    *build_menu_item = Visibility::Hidden;
+                }
             },
         )
         .add_systems(FixedUpdate, on_build.run_if(in_state(BuildState::Building)))
-        .add_systems(OnEnter(GameState::InGame), spawn_ghost);
+        .add_systems(
+            OnEnter(GameState::InGame),
+            (spawn_ghost, spawn_blueprint_window),
+        );
 }
+
+#[derive(Component)]
+struct BuildMenuItem;
 
 fn spawn_ghost(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn((
         Visibility::Hidden,
+        BuildMenuItem,
         GhostBuilding,
         Sprite::from_image(image_assets.farm.clone()),
         Transform::from_xyz(0., 0., 5.0),
     ));
+}
+
+fn update_ghost(
+    mut ghost: Query<&mut Sprite, With<GhostBuilding>>,
+    building_type: Res<BuildingType>,
+    image_assets: Res<ImageAssets>,
+) {
+    let mut ghost = ghost.single_mut().unwrap();
+    ghost.image = building_type.get_texture(&*image_assets);
+}
+
+#[derive(Component)]
+struct BluePrintButton(BuildingType);
+
+fn spawn_blueprint_window(
+    mut commands: Commands,
+    image_assets: Res<ImageAssets>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture_atlas =
+        TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas = TextureAtlas::from(texture_atlas_handle);
+    commands
+        .spawn((
+            Visibility::Hidden,
+            BuildMenuItem,
+            Node {
+                top: Val::Vh(5.0),
+                right: Val::Px(0.),
+                display: Display::Flex,
+                position_type: PositionType::Absolute,
+                justify_content: JustifyContent::End,
+                align_items: AlignItems::FlexEnd,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(10.0)),
+                margin: UiRect::top(Val::Px(10.0)),
+                ..Default::default()
+            },
+            BackgroundColor(Color::BLACK),
+        ))
+        .with_children(|parent| {
+            for building_type in BuildingType::iterator() {
+                parent.spawn((
+                    ImageNode::from_atlas_image(
+                        building_type.get_texture(&*image_assets),
+                        texture_atlas.clone(),
+                    ),
+                    Node {
+                        width: Val::Px(142.0),
+                        height: Val::Px(142.0),
+                        bottom: Val::Px(0.0),
+
+                        ..Default::default()
+                    },
+                    BackgroundColor(bevy::color::palettes::css::ANTIQUE_WHITE.into()),
+                    BluePrintButton(building_type),
+                    Button,
+                ));
+            }
+        });
+}
+
+fn change_selected_building(
+    interaction_query: Query<
+        (&Interaction, &BluePrintButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut current_building: ResMut<BuildingType>,
+) {
+    for (interaction, BluePrintButton(building_type)) in &interaction_query {
+        if *interaction == Interaction::Pressed {
+            *current_building = *building_type;
+        }
+    }
 }
 
 pub const MAX_CONSTRUCTION_SNAPPING: f32 = 40.0;
@@ -62,6 +182,7 @@ pub const MAX_CONSTRUCTION_SNAPPING: f32 = 40.0;
 pub struct BuildEvent {
     child_of: Entity,
     offset: Vec2,
+    building_type: BuildingType,
 }
 
 fn construct_buildings(
@@ -72,6 +193,7 @@ fn construct_buildings(
     buttons: Res<ButtonInput<MouseButton>>,
     mut ev: EventWriter<BuildEvent>,
     mut commands: Commands,
+    building_type: Res<BuildingType>,
 ) {
     let Ok((camera, camera_transform)) = q_camera.single() else {
         return;
@@ -108,6 +230,7 @@ fn construct_buildings(
                 ev.write(BuildEvent {
                     child_of: build_parent.0,
                     offset: build_location.0,
+                    building_type: *building_type,
                 });
             }
         } else {
@@ -123,14 +246,24 @@ fn on_build(
     image_assets: Res<ImageAssets>,
     mut commands: Commands,
 ) {
-    for BuildEvent { child_of, offset } in ev.read() {
+    for BuildEvent {
+        child_of,
+        offset,
+        building_type,
+    } in ev.read()
+    {
         let parent = parents.get(*child_of).unwrap();
         let building = commands
             .spawn((
-                Sprite::from_image(image_assets.farm.clone()),
+                Sprite::from_image(building_type.get_texture(&*image_assets)),
                 Transform::from_translation(offset.extend(4.0)),
-                Building, // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+                Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
             ))
+            .with_children(|parent| {
+                for build_location in building_type.get_build_locations() {
+                    parent.spawn((BuildLocation(build_location), Transform::default()));
+                }
+            })
             .id();
         commands.entity(parent).add_child(building);
     }

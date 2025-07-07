@@ -3,7 +3,7 @@ use bevy::{math::FloatPow, prelude::*};
 use crate::{
     GameState, ImageAssets,
     build_plugin::{BuildLocation, Building},
-    world_plugin::{CurrentStop, GenerateNextStop, NextStop},
+    world_plugin::{CurrentStop, GenerateNextStop, NextStop, Stop},
 };
 
 mod train_speed_ui;
@@ -40,6 +40,7 @@ pub fn train_plugin(app: &mut App) {
         max_velocity: 27.0,
     })
     .add_event::<AdvanceEvent>()
+    .add_event::<StopEvent>()
     .init_state::<TrainState>()
     .add_systems(OnEnter(GameState::InGame), spawn_train)
     .init_resource::<MaxPixelHeightOfTrain>()
@@ -75,6 +76,12 @@ pub struct Train {
 
 #[derive(Event)]
 pub struct AdvanceEvent;
+
+#[derive(Event)]
+pub struct StopEvent {
+    stop: Stop,
+    name: String,
+}
 
 fn spawn_train(
     mut commands: Commands,
@@ -132,6 +139,7 @@ fn move_train(
     mut next_state: ResMut<NextState<TrainState>>,
     mut commands: Commands,
     time: Res<Time>,
+    mut ev: EventWriter<StopEvent>,
 ) {
     let mut train = train.single_mut().unwrap();
 
@@ -160,6 +168,11 @@ fn move_train(
         train.velocity = 0.0;
 
         train.velocity = 0.0;
+
+        ev.write(StopEvent {
+            stop: next_stop.stop.clone(),
+            name: next_stop.name.clone(),
+        });
 
         current_stop.0 = Some(next_stop.stop.clone());
 

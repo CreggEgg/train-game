@@ -45,6 +45,10 @@ struct ImageAssets {
     rail: Handle<Image>,
     #[asset(path = "housing.png")]
     housing: Handle<Image>,
+    #[asset(path = "Booth.png")]
+    booth: Handle<Image>,
+    #[asset(path = "BoothCard.png")]
+    booth_card: Handle<Image>,
 }
 
 fn main() {

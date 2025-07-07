@@ -64,22 +64,24 @@ fn spawn_control_panel(mut commands: Commands) {
                     // margin: UiRect::AUTO.with_left(Val::Px(0.)).with_right(Val::Px(0.)),
                     ..Default::default()
                 },
-                BackgroundColor(Color::srgb(0., 1., 0.)),
+                BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
+                BorderRadius::MAX,
                 AdvanceButton,
                 Button,
                 children![Text::new("Advance")]
             ),
             (
                 Node {
-                    width: Val::Px(160.0),
+                    width: Val::Px(180.0),
                     height: Val::Percent(100.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     // margin: UiRect::AUTO.with_left(Val::Px(0.)).with_right(Val::Px(0.)),
                     ..Default::default()
                 },
-                BackgroundColor(Color::srgb(0., 1., 0.)),
+                BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
                 BuildButton::StartBuilding,
+                BorderRadius::MAX,
                 Button,
                 children![Text::new("Build")]
             )

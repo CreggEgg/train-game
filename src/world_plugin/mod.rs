@@ -1,17 +1,89 @@
 use bevy::prelude::*;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, SeedableRng, seq::IndexedMutRandom};
 
 use crate::{
     GameState, ImageAssets, InGameState,
-    train_plugin::{Train, TrainStats},
+    train_plugin::{Train, TrainState, TrainStats},
+    world_plugin::goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
 };
 
+mod goblin_spawner;
 mod stop_plugin;
 
 #[derive(Clone)]
 pub enum Stop {
     Town,
-    InitialStop,
+    GoblinAttack { waves: Vec<Vec<GoblinType>> },
+    Initial,
+}
+
+impl Stop {
+    fn spawn_stop(&self, mut commands: Commands, distance: f32, image_assets: Res<ImageAssets>) {
+        match self {
+            Stop::Town => {
+                commands.spawn((
+                    NextStopImage,
+                    Transform::from_xyz(-distance * METERS_PER_UNIT, 0., -10.),
+                    WorldObject(distance),
+                    children![
+                        (
+                            Sprite::from_image(image_assets.stop_bg.clone()),
+                            Transform::from_xyz(0., 0., -25.0)
+                        ),
+                        (
+                            Sprite::from_image(image_assets.stop_fg.clone()),
+                            Transform::from_xyz(0., 0., 25.0)
+                        )
+                    ],
+                ));
+            }
+            Stop::Initial => {}
+            Stop::GoblinAttack { waves } => {
+                commands.spawn((
+                    NextStopImage,
+                    Transform::from_xyz(-distance * METERS_PER_UNIT, 0., -10.),
+                    WorldObject(distance),
+                    children![
+                        (
+                            Sprite::from_color(Color::srgb(0.0, 1.0, 0.0), Vec2::ONE),
+                            Transform {
+                                translation: Vec3::default(),
+                                scale: Vec2::new(120.0, 120.0).extend(1.0),
+                                ..Default::default()
+                            },
+                        ),
+                        (GoblinSpawner::new(waves.clone()), Transform::default()),
+                    ],
+                ));
+            }
+        }
+    }
+
+    fn generate_random<R: Rng>(rng: &mut R) -> Self {
+        let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 2] = [
+            (&mut |_| Stop::Town, 3),
+            (
+                &mut |rng| Stop::GoblinAttack {
+                    waves: generate_waves(rng),
+                },
+                1,
+            ),
+        ];
+
+        stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
+    }
+}
+
+fn generate_waves(rng: &mut impl Rng) -> Vec<Vec<GoblinType>> {
+    let waves = rng.random_range(1..=10);
+
+    (0..waves)
+        .map(|_| {
+            let num = rng.random_range(1..=10);
+
+            (0..num).map(|_| GoblinType::Basic).collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>()
 }
 
 #[derive(Resource)]
@@ -40,6 +112,14 @@ pub fn world_plugin(app: &mut App) {
                 .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
         )
         .add_systems(OnEnter(GameState::InGame), spawn_rails)
+        .add_systems(
+            FixedUpdate,
+            spawn_goblins.run_if(
+                in_state(GameState::InGame)
+                    .and(in_state(InGameState::Running))
+                    .and(in_state(TrainState::Stopped)),
+            ),
+        )
         .add_observer(
             |_trigger: Trigger<GenerateNextStop>,
              mut next_stop: ResMut<NextStop>,
@@ -54,7 +134,7 @@ pub fn world_plugin(app: &mut App) {
 fn generate_world(mut commands: Commands) {
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(10);
 
-    commands.insert_resource(CurrentStop(Some(Stop::InitialStop)));
+    commands.insert_resource(CurrentStop(Some(Stop::Initial)));
     commands.insert_resource(generate_next_stop(&mut rng, 0.));
 
     commands.insert_resource(GameWorld { rng });
@@ -67,7 +147,7 @@ fn generate_next_stop(rng: &mut impl Rng, current_distance: f32) -> NextStop {
     info!("Random f32: {}", distance);
 
     NextStop {
-        stop: Stop::Town,
+        stop: Stop::generate_random(rng),
         distance,
         spawned: false,
     }
@@ -82,7 +162,7 @@ struct NextStopImage;
 const METERS_PER_UNIT: f32 = 100.0;
 
 fn spawn_stop_assets(
-    mut commands: Commands,
+    commands: Commands,
     train: Query<&Train>,
     mut next_stop: ResMut<NextStop>,
     image_assets: Res<ImageAssets>,
@@ -93,21 +173,10 @@ fn spawn_stop_assets(
         && next_stop.distance - train.distance < horizontal_distance * METERS_PER_UNIT
     {
         next_stop.spawned = true;
-        commands.spawn((
-            NextStopImage,
-            Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., -10.),
-            WorldObject(next_stop.distance),
-            children![
-                (
-                    Sprite::from_image(image_assets.stop_bg.clone()),
-                    Transform::from_xyz(0., 0., -25.0)
-                ),
-                (
-                    Sprite::from_image(image_assets.stop_fg.clone()),
-                    Transform::from_xyz(0., 0., 25.0)
-                )
-            ],
-        ));
+
+        next_stop
+            .stop
+            .spawn_stop(commands, next_stop.distance, image_assets);
     }
 }
 
@@ -124,7 +193,6 @@ fn move_world_objects(
 
         // 2000 is to not despawn it immediatily after it gets past the train,
         // and also give some le way so it isn't too easy to see the despawned area
-
         obj.0.translation.x = newx;
 
         if newx > (train_stats.train_size() + 4000.0) {

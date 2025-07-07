@@ -88,4 +88,3 @@ fn start_button(
         }
     }
 }
-

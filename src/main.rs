@@ -8,6 +8,7 @@ mod build_plugin;
 mod camera_plugin;
 mod control_panel_plugin;
 mod debug_plugin;
+mod goblins;
 mod main_menu;
 mod resources_plugin;
 mod train_plugin;

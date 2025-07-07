@@ -5,12 +5,14 @@ use bevy::prelude::*;
 use crate::{
     GameState,
     build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING},
+    goblins::Goblin,
 };
 
 const SKIP_MAIN_MENU: bool = true;
 const LOG_DISTANCE: bool = true;
 const BUILD_LOCATION_GIZMO: bool = true;
 const ZOOM_CAMERA_OUT: bool = true;
+const GOBLIN_KILL: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -21,6 +23,9 @@ pub fn debug_plugin(app: &mut App) {
     }
     if ZOOM_CAMERA_OUT {
         app.add_systems(Update, zoom_camera_out);
+    }
+    if GOBLIN_KILL {
+        app.add_systems(Update, kill_goblins);
     }
 }
 
@@ -61,6 +66,18 @@ fn zoom_camera_out(keys: Res<ButtonInput<KeyCode>>, mut camera: Query<&mut Proje
                 }
                 _ => panic!("different camera projection don't know what to do with"),
             }
+        }
+    }
+}
+
+fn kill_goblins(
+    keys: Res<ButtonInput<KeyCode>>,
+    goblins: Query<Entity, With<Goblin>>,
+    mut commands: Commands,
+) {
+    if keys.just_pressed(KeyCode::KeyK) {
+        for g in goblins {
+            commands.entity(g).despawn();
         }
     }
 }

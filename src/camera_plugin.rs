@@ -34,7 +34,8 @@ fn spawn_camera(mut commands: Commands) {
 }
 
 const CAMERA_MOVE_SPEED: f32 = 120.0;
-const CAMERA_ACCELERATION: f32 = 360.0;
+const CAMERA_MAX_SPEED: f32 = 500.0;
+const CAMERA_ACCELERATION: f32 = 10000.0;
 
 fn move_camera(
     mut camera: Query<&mut Transform, With<Camera>>,
@@ -87,7 +88,7 @@ fn move_camera(
 
     let acelx = acelx * CAMERA_ACCELERATION * time.delta_secs();
 
-    camera_speeds.vx += acelx * CAMERA_ACCELERATION * time.delta_secs();
+    camera_speeds.vx += acelx;
 
     if camera_speeds.vy.partial_cmp(&0.0) != acely.partial_cmp(&0.0) {
         camera_speeds.vy = acely * CAMERA_MOVE_SPEED;
@@ -99,11 +100,15 @@ fn move_camera(
 
     let mut trans /* rights */ = camera.single_mut().unwrap();
 
-    trans.translation.x += camera_speeds.vx * time.delta_secs() + 0.5 * acelx * time.delta_secs();
+    trans.translation.x += camera_speeds.vx.clamp(-CAMERA_MAX_SPEED, CAMERA_MAX_SPEED)
+        * time.delta_secs()
+        + 0.5 * acelx * time.delta_secs();
 
     trans.translation.x = trans.translation.x.clamp(0.0, train_length);
 
-    trans.translation.y += camera_speeds.vy * time.delta_secs() + 0.5 * acely * time.delta_secs();
+    trans.translation.y += camera_speeds.vy.clamp(-CAMERA_MAX_SPEED, CAMERA_MAX_SPEED)
+        * time.delta_secs()
+        + 0.5 * acely * time.delta_secs();
 
     trans.translation.y = trans
         .translation

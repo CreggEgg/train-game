@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use rand::{Rng, SeedableRng};
 
-use crate::{GameState, ImageAssets, InGameState, train_plugin::Train};
+use crate::{
+    GameState, ImageAssets, InGameState,
+    train_plugin::{Train, TrainStats},
+};
 
 mod stop_plugin;
 
@@ -109,12 +112,26 @@ fn spawn_stop_assets(
 }
 
 fn move_world_objects(
-    mut objs: Query<(&mut Transform, &WorldObject)>,
+    mut objs: Query<(&mut Transform, &WorldObject, Entity)>,
     train: Query<&Train>,
-    time: Res<Time>,
+    train_stats: Res<TrainStats>,
+    mut commands: Commands,
 ) {
     for mut obj in &mut objs {
-        obj.0.translation.x = -(obj.1.0 - train.single().unwrap().distance) * METERS_PER_UNIT;
+        let newx = (train.single().unwrap().distance - obj.1.0) * METERS_PER_UNIT;
+
+        // info!("{newx}");
+
+        // 2000 is to not despawn it immediatily after it gets past the train,
+        // and also give some le way so it isn't too easy to see the despawned area
+
+        obj.0.translation.x = newx;
+
+        if newx > (train_stats.train_size() + 4000.0) {
+            commands.entity(obj.2).despawn();
+            info!("despawning world object");
+        }
+
         // info!(
         //     "Error: {:.2} | Actual distance: {:.2}",
         //     obj.0.translation.x.abs()
@@ -122,6 +139,8 @@ fn move_world_objects(
         //     ((obj.1.0 - train.single().unwrap().distance) / METERS_PER_UNIT)
         // );
     }
+
+    // info!("world objects {}", objs.iter().len());
 }
 
 #[derive(Component)]

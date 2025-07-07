@@ -20,6 +20,12 @@ pub struct TrainStats {
     pub max_velocity: f32,
 }
 
+impl TrainStats {
+    pub fn train_size(&self) -> f32 {
+        (self.length as f32) * CAR_SIZE
+    }
+}
+
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 pub enum TrainState {
     #[default]

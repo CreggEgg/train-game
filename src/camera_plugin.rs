@@ -45,7 +45,7 @@ fn move_camera(
     height: Res<MaxPixelHeightOfTrain>,
     mut camera_speeds: ResMut<CameraSpeeds>,
 ) {
-    let train_length = train_stats.length as f32 * CAR_SIZE;
+    let train_length = train_stats.train_size();
 
     let mut acelx = 0.0f32;
     let mut acely = 0.0f32;

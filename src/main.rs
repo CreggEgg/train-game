@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity, clippy::too_many_arguments)]
 use bevy::prelude::*;
 use bevy_asset_loader::{
     asset_collection::AssetCollection,

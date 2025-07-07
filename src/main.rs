@@ -33,8 +33,10 @@ struct ImageAssets {
     train_car: Handle<Image>,
     #[asset(path = "trainlocomotive.png")]
     train_locomotive: Handle<Image>,
-    #[asset(path = "stop.png")]
-    stop: Handle<Image>,
+    #[asset(path = "stop_bg.png")]
+    stop_bg: Handle<Image>,
+    #[asset(path = "stop_fg.png")]
+    stop_fg: Handle<Image>,
     #[asset(path = "farm.png")]
     farm: Handle<Image>,
     #[asset(path = "rail.png")]

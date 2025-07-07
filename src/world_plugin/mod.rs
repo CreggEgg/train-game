@@ -91,10 +91,19 @@ fn spawn_stop_assets(
     {
         next_stop.spawned = true;
         commands.spawn((
-            Sprite::from_image(image_assets.stop.clone()),
             NextStopImage,
             Transform::from_xyz(-next_stop.distance * METERS_PER_UNIT, 0., -10.),
             WorldObject(next_stop.distance),
+            children![
+                (
+                    Sprite::from_image(image_assets.stop_bg.clone()),
+                    Transform::from_xyz(0., 0., -25.0)
+                ),
+                (
+                    Sprite::from_image(image_assets.stop_fg.clone()),
+                    Transform::from_xyz(0., 0., 25.0)
+                )
+            ],
         ));
     }
 }

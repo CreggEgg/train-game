@@ -45,8 +45,8 @@ pub fn train_plugin(app: &mut App) {
     .add_systems(
         FixedUpdate,
         (
-            start_advancing.run_if(in_state(TrainState::Stopped)),
-            move_train.run_if(in_state(TrainState::Advancing)),
+            start_advancing.run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
+            move_train.run_if(in_state(TrainState::Advancing).and(in_state(GameState::InGame))),
         ),
     )
     .add_systems(
@@ -96,7 +96,10 @@ fn spawn_train(
                     Name::new(format!("Car{i}")),
                     TrainCar,
                     Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
-                    children![(BuildLocation(Vec2::new(-40.0, 0.0)), Transform::default())],
+                    children![
+                        (BuildLocation(Vec2::new(-30.0, 0.0)), Transform::default()),
+                        (BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())
+                    ],
                 ));
             }
         });
@@ -130,7 +133,7 @@ fn move_train(
     train.velocity = train.velocity.min(train_stats.max_velocity);
 
     train.distance += train.velocity * time.delta_secs();
-    info!("Distance: {}", train.distance);
+    // info!("Distance: {}", train.distance);
 
     if next_stop.distance - train.distance < 0.1 {
         info!(

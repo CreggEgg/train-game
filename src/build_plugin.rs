@@ -31,12 +31,25 @@ pub fn build_plugin(app: &mut App) {
                     .and(in_state(BuildState::Building)),
             ),
         )
+        .add_systems(
+            OnEnter(BuildState::Building),
+            |mut ghost: Query<&mut Visibility, With<GhostBuilding>>| {
+                *ghost.single_mut().unwrap() = Visibility::Visible;
+            },
+        )
+        .add_systems(
+            OnExit(BuildState::Building),
+            |mut ghost: Query<&mut Visibility, With<GhostBuilding>>| {
+                *ghost.single_mut().unwrap() = Visibility::Hidden;
+            },
+        )
         .add_systems(FixedUpdate, on_build.run_if(in_state(BuildState::Building)))
         .add_systems(OnEnter(GameState::InGame), spawn_ghost);
 }
 
 fn spawn_ghost(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn((
+        Visibility::Hidden,
         GhostBuilding,
         Sprite::from_image(image_assets.farm.clone()),
         Transform::from_xyz(0., 0., 5.0),

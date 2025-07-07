@@ -229,7 +229,7 @@ fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
 }
 
 fn loop_rails(mut rails: Query<(&mut WorldObject, &Rail)>, train: Query<&Train>) {
-    for (mut world_object, rail) in &mut rails {
+    for (mut world_object, _) in &mut rails {
         if world_object.0 - train.single().unwrap().distance < -25.0 {
             world_object.0 += RAIL_WIDTH * NUM_RAILS as f32;
         }

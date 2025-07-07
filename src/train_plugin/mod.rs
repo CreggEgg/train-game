@@ -39,8 +39,8 @@ pub fn train_plugin(app: &mut App) {
     .add_systems(
         FixedUpdate,
         (
-            start_advancing.run_if(in_state(TrainState::Stopped)),
-            move_train.run_if(in_state(TrainState::Advancing)),
+            start_advancing.run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
+            move_train.run_if(in_state(TrainState::Advancing).and(in_state(GameState::InGame))),
         ),
     );
 }

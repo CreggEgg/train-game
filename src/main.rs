@@ -8,6 +8,7 @@ mod build_plugin;
 mod camera_plugin;
 mod control_panel_plugin;
 mod debug_plugin;
+mod main_menu;
 mod train_plugin;
 mod world_plugin;
 
@@ -49,6 +50,7 @@ fn main() {
             world_plugin::world_plugin,
             control_panel_plugin::control_panel_plugin,
             build_plugin::build_plugin,
+            main_menu::main_menu_plugin,
         ))
         .init_state::<InGameState>()
         .init_state::<GameState>()

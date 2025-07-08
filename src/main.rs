@@ -4,6 +4,7 @@ use bevy_asset_loader::{
     asset_collection::AssetCollection,
     loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
 };
+use ui_state::InMenu;
 
 mod build_plugin;
 mod camera_plugin;
@@ -13,6 +14,7 @@ mod goblins;
 mod main_menu;
 mod resources_plugin;
 mod train_plugin;
+mod ui_state;
 mod world_plugin;
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
@@ -52,6 +54,8 @@ struct ImageAssets {
     booth_card: Handle<Image>,
     #[asset(path = "DebugBuilding.png")]
     debug_building: Handle<Image>,
+    #[asset(path = "Ground.png")]
+    ground: Handle<Image>,
 }
 
 fn main() {
@@ -68,6 +72,7 @@ fn main() {
         ))
         .init_state::<InGameState>()
         .init_state::<GameState>()
+        .init_state::<InMenu>()
         .add_loading_state(
             LoadingState::new(GameState::Loading)
                 .continue_to_state(GameState::InGame)

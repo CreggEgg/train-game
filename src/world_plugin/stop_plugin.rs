@@ -1,16 +1,23 @@
 use bevy::prelude::*;
 
-use crate::{GameState, ImageAssets, InGameState, resources_plugin::Item};
+use crate::{
+    GameState, ImageAssets, InGameState, control_panel_plugin::AdvanceBlocker,
+    resources_plugin::Item, ui_state::InMenu,
+};
 
 use super::CurrentStop;
 pub fn stop_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_stop_menu)
+        .insert_resource(ActiveContracts(Vec::new()))
         .add_systems(
             Update,
             (
                 show_stop_menu.run_if(resource_changed::<CurrentStop>),
-                hide_stop_menu
-                    .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
+                hide_stop_menu.run_if(
+                    in_state(GameState::InGame)
+                        .and(in_state(InGameState::Running))
+                        .and(in_state(InMenu::StopMenu)),
+                ),
             ),
         );
 }
@@ -40,6 +47,7 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                 ..Default::default()
             },
             StopMenu,
+            AdvanceBlocker,
             Visibility::Hidden,
         ))
         .with_children(|parent| {
@@ -83,10 +91,12 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
 fn show_stop_menu(
     current_stop: Res<CurrentStop>,
     mut menu: Query<&mut Visibility, With<StopMenu>>,
+    mut menu_state: ResMut<NextState<InMenu>>,
 ) {
     if current_stop.0.is_some() {
         if let Ok(mut menu) = menu.single_mut() {
             *menu = Visibility::Visible;
+            menu_state.set(InMenu::StopMenu);
         }
     }
 }
@@ -96,10 +106,12 @@ fn hide_stop_menu(
         (Changed<Interaction>, With<Button>),
     >,
     mut menu: Query<&mut Visibility, With<StopMenu>>,
+    mut menu_state: ResMut<NextState<InMenu>>,
 ) {
     for (interaction, button) in &interaction_query {
         if *interaction == Interaction::Pressed {
             *menu.single_mut().unwrap() = Visibility::Hidden;
+            menu_state.set(InMenu::None);
         }
     }
 }

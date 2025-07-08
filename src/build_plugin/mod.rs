@@ -2,14 +2,15 @@ use core::f32;
 
 use bevy::{math::FloatPow, prelude::*, window::PrimaryWindow};
 
-use crate::{GameState, ImageAssets, InGameState, resources_plugin::Inventory};
+use crate::{GameState, ImageAssets, InGameState, resources_plugin::Inventory, ui_state::InMenu};
 
-#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
-pub enum BuildState {
-    Building,
-    #[default]
-    NotBuilding,
-}
+// #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
+// pub enum BuildState {
+//     Building,
+//     #[default]
+//     NotBuilding,
+// }
+mod building_menus;
 
 #[derive(Resource, Clone, Copy)]
 pub enum BuildingType {
@@ -49,27 +50,28 @@ struct GhostBuilding;
 pub struct Building(BuildingType);
 
 pub fn build_plugin(app: &mut App) {
-    app.init_state::<BuildState>()
+    app //.init_state::<BuildState>()
         .insert_resource(BuildingType::Farm)
         .add_event::<BuildEvent>()
+        .add_plugins(building_menus::building_menus_plugin)
         .add_systems(
             Update,
             (construct_buildings, change_selected_building).run_if(
                 in_state(GameState::InGame)
                     .and(in_state(InGameState::Running))
-                    .and(in_state(BuildState::Building)),
+                    .and(in_state(InMenu::BuildMenu)),
             ),
         )
         .add_systems(
             FixedUpdate,
             update_ghost.run_if(
-                in_state(BuildState::Building)
+                in_state(InMenu::BuildMenu)
                     .and(in_state(GameState::InGame))
                     .and(resource_changed::<BuildingType>),
             ),
         )
         .add_systems(
-            OnEnter(BuildState::Building),
+            OnEnter(InMenu::BuildMenu),
             |mut ghost: Query<&mut Visibility, With<BuildMenuItem>>| {
                 for mut build_menu_item in &mut ghost {
                     *build_menu_item = Visibility::Visible;
@@ -77,14 +79,14 @@ pub fn build_plugin(app: &mut App) {
             },
         )
         .add_systems(
-            OnExit(BuildState::Building),
+            OnExit(InMenu::BuildMenu),
             |mut ghost: Query<&mut Visibility, With<BuildMenuItem>>| {
                 for mut build_menu_item in &mut ghost {
                     *build_menu_item = Visibility::Hidden;
                 }
             },
         )
-        .add_systems(FixedUpdate, on_build.run_if(in_state(BuildState::Building)))
+        .add_systems(FixedUpdate, on_build.run_if(in_state(InMenu::BuildMenu)))
         .add_systems(
             OnEnter(GameState::InGame),
             (spawn_ghost, spawn_blueprint_window),

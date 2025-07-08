@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     GameState, InGameState,
-    build_plugin::BuildState,
     train_plugin::{AdvanceEvent, Train},
+    ui_state::InMenu,
     world_plugin::NextStop,
 };
 
@@ -11,7 +11,10 @@ pub fn control_panel_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_control_panel)
         .add_systems(
             Update,
-            (advance_button, build_button)
+            (
+                advance_button,
+                build_button.run_if(in_state(InMenu::None).or(in_state(InMenu::BuildMenu))),
+            )
                 .run_if(in_state(GameState::InGame))
                 .run_if(in_state(InGameState::Running)),
         )
@@ -21,7 +24,7 @@ pub fn control_panel_plugin(app: &mut App) {
                 .run_if(resource_changed::<NextStop>.and(in_state(GameState::InGame))),
         )
         .add_systems(
-            OnEnter(BuildState::Building),
+            OnEnter(InMenu::BuildMenu),
             |mut build_button: Query<(&mut BuildButton, &Children)>,
              mut text_query: Query<&mut Text>| {
                 println!("hi");
@@ -32,7 +35,7 @@ pub fn control_panel_plugin(app: &mut App) {
             },
         )
         .add_systems(
-            OnExit(BuildState::Building),
+            OnExit(InMenu::BuildMenu),
             |mut build_button: Query<(&mut BuildButton, &Children)>,
              mut text_query: Query<&mut Text>| {
                 let (mut build_button, children) = build_button.single_mut().unwrap();
@@ -111,11 +114,16 @@ fn advance_button(
         &Interaction,
         (Changed<Interaction>, With<Button>, With<AdvanceButton>),
     >,
-    blockers: Query<&AdvanceBlocker>,
+    blockers: Query<(&AdvanceBlocker, Option<&Visibility>)>,
     mut ev: EventWriter<AdvanceEvent>,
 ) {
     for interaction in &interaction_query {
-        if *interaction == Interaction::Pressed && blockers.iter().len() == 0 {
+        if *interaction == Interaction::Pressed
+            && (blockers.iter().len() == 0
+                || blockers
+                    .iter()
+                    .all(|(_, it)| matches!(it, Some(Visibility::Hidden))))
+        {
             info!("Sending advance event");
             ev.write(AdvanceEvent);
         }
@@ -124,13 +132,13 @@ fn advance_button(
 
 fn build_button(
     interaction_query: Query<(&Interaction, &BuildButton), (Changed<Interaction>, With<Button>)>,
-    mut next_state: ResMut<NextState<BuildState>>,
+    mut next_state: ResMut<NextState<InMenu>>,
 ) {
     for (interaction, button) in &interaction_query {
         if *interaction == Interaction::Pressed {
             next_state.set(match button {
-                BuildButton::StartBuilding => BuildState::Building,
-                BuildButton::EndBuilding => BuildState::NotBuilding,
+                BuildButton::StartBuilding => InMenu::BuildMenu,
+                BuildButton::EndBuilding => InMenu::None,
             });
         }
     }

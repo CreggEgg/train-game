@@ -83,8 +83,15 @@ impl Stop {
     }
 }
 
-const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South"];
-const SECOND_HALVES: &[&'static str] = &[" Upon Trent", "sbury", "ceston", "chester"];
+const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South", "Hamburger", "East West "];
+const SECOND_HALVES: &[&'static str] = &[
+    " Upon Trent",
+    "sbury",
+    "ceston",
+    "chester",
+    " Schlamburger",
+    "phalia",
+];
 
 fn generate_town_name(rng: &mut impl Rng) -> String {
     let mut out = String::new();
@@ -246,7 +253,10 @@ fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
             Transform::default(),
             WorldObject((i as f32 - 4.) * RAIL_WIDTH),
             Rail,
-            // children![Sprite::from_image(image_assets.ground.clone()),],
+            children![(
+                Sprite::from_image(image_assets.ground.clone()),
+                Transform::from_xyz(0., 0., -100.0)
+            ),],
         ));
     }
 }

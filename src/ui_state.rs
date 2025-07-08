@@ -6,4 +6,5 @@ pub enum InMenu {
     None,
     StopMenu,
     BuildMenu,
+    BuildingMenu,
 }

@@ -1,6 +1,7 @@
 use core::f32;
 
 use bevy::{math::FloatPow, prelude::*, window::PrimaryWindow};
+use building_menus::BuildingInspected;
 
 use crate::{GameState, ImageAssets, InGameState, resources_plugin::Inventory, ui_state::InMenu};
 
@@ -37,6 +38,14 @@ impl BuildingType {
 
     fn iterator() -> impl Iterator<Item = Self> {
         [Self::Housing, Self::Farm, Self::Storage].into_iter()
+    }
+
+    fn name(&self) -> &'static str {
+        match self {
+            BuildingType::Housing => "Housing",
+            BuildingType::Farm => "Farm",
+            BuildingType::Storage => "Storage",
+        }
     }
 }
 
@@ -179,7 +188,7 @@ fn spawn_blueprint_window(
 
                                 ..default()
                             },
-                            children![Text::new("Blueprint"),],
+                            children![Text::new(building_type.name()),],
                         ),
                     ],
                 ));
@@ -282,6 +291,8 @@ fn on_build(
             Sprite::from_image(building_type.get_texture(&image_assets)),
             Transform::from_translation(offset.extend(4.0)),
             Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+            //
+            Pickable::default(),
         ));
         building.with_children(|parent| {
             for build_location in building_type.get_build_locations() {
@@ -294,7 +305,21 @@ fn on_build(
             }
             _ => {}
         }
-        let building = building.id();
-        commands.entity(parent).add_child(building);
+
+        let building_id = building.id();
+        building.observe(
+            move |mut trigger: Trigger<Pointer<Click>>,
+                  mut selected_building: ResMut<BuildingInspected>,
+                  mut menu_state: ResMut<NextState<InMenu>>,
+                  current_menu_state: Res<State<InMenu>>| {
+                if let InMenu::None = **current_menu_state {
+                    println!("got click");
+                    selected_building.0 = Some(building_id);
+                    menu_state.set(InMenu::BuildingMenu);
+                    trigger.propagate(false);
+                }
+            },
+        );
+        commands.entity(parent).add_child(building_id);
     }
 }

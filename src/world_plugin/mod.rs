@@ -78,17 +78,23 @@ impl Stop {
                 1,
             ),
         ];
-        
-        if let Some(Stop::GoblinAttack { waves:_ }) = current_stop.0 {
+
+        if let Some(Stop::GoblinAttack { waves: _ }) = current_stop.0 {
             Stop::Town
-        }
-        else {
+        } else {
             stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
         }
     }
 }
 
-const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South", "Hamburger", "East West", "Hamburger Schlamburger",];
+const FIRST_HALVES: &[&'static str] = &[
+    "Snod",
+    "Bell",
+    "South",
+    "Hamburger",
+    "East West",
+    "Hamburger Schlamburger",
+];
 const SECOND_HALVES: &[&'static str] = &[
     " Upon Trent",
     "sbury",
@@ -159,8 +165,11 @@ pub fn world_plugin(app: &mut App) {
              current_stop: Res<CurrentStop>,
              mut game_world: ResMut<GameWorld>,
              train: Query<&Train>| {
-                *next_stop =
-                    generate_next_stop(&mut game_world.rng, train.single().unwrap().distance, &current_stop);
+                *next_stop = generate_next_stop(
+                    &mut game_world.rng,
+                    train.single().unwrap().distance,
+                    &current_stop,
+                );
             },
         );
 }
@@ -174,7 +183,11 @@ fn generate_world(mut commands: Commands) {
     commands.insert_resource(GameWorld { rng });
 }
 
-fn generate_next_stop(rng: &mut impl Rng, current_distance: f32, current_stop: &CurrentStop) -> NextStop {
+fn generate_next_stop(
+    rng: &mut impl Rng,
+    current_distance: f32,
+    current_stop: &CurrentStop,
+) -> NextStop {
     let distance = rng.random_range(
         60.0..=140.0, /*units now in meters but i made these very small to make it easy to test*/
     ) + current_distance;

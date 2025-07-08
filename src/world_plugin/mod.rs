@@ -48,12 +48,12 @@ impl Stop {
                     WorldObject(distance),
                     children![
                         (
-                            Sprite::from_color(Color::srgb(0.0, 1.0, 0.0), Vec2::ONE),
-                            Transform {
-                                translation: Vec3::default(),
-                                scale: Vec2::new(120.0, 120.0).extend(1.0),
-                                ..Default::default()
-                            },
+                            Sprite::from_image(image_assets.goblin_stop_bg.clone()),
+                            Transform::from_xyz(0., 0., -25.0)
+                        ),
+                        (
+                            Sprite::from_image(image_assets.goblin_stop_fg.clone()),
+                            Transform::from_xyz(0., 0., 25.0)
                         ),
                         (GoblinSpawner::new(waves.clone()), Transform::default()),
                     ],
@@ -68,9 +68,9 @@ impl Stop {
         }
     }
 
-    fn generate_random<R: Rng>(rng: &mut R) -> Self {
+    fn generate_random<R: Rng>(rng: &mut R, current_stop: &CurrentStop) -> Self {
         let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 2] = [
-            (&mut |_| Stop::Town, 3),
+            (&mut |_| Stop::Town, 5),
             (
                 &mut |rng| Stop::GoblinAttack {
                     waves: generate_waves(rng),
@@ -78,18 +78,24 @@ impl Stop {
                 1,
             ),
         ];
-
-        stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
+        
+        if let Some(Stop::GoblinAttack { waves:_ }) = current_stop.0 {
+            Stop::Town
+        }
+        else {
+            stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
+        }
     }
 }
 
-const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South", "Hamburger", "East West "];
+const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South", "Hamburger", "East West", "Hamburger Schlamburger",];
 const SECOND_HALVES: &[&'static str] = &[
     " Upon Trent",
     "sbury",
     "ceston",
     "chester",
     " Schlamburger",
+    " Hamburger Schlamburger",
     "phalia",
 ];
 
@@ -150,29 +156,30 @@ pub fn world_plugin(app: &mut App) {
         .add_observer(
             |_trigger: Trigger<GenerateNextStop>,
              mut next_stop: ResMut<NextStop>,
+             current_stop: Res<CurrentStop>,
              mut game_world: ResMut<GameWorld>,
              train: Query<&Train>| {
                 *next_stop =
-                    generate_next_stop(&mut game_world.rng, train.single().unwrap().distance);
+                    generate_next_stop(&mut game_world.rng, train.single().unwrap().distance, &current_stop);
             },
         );
 }
 
 fn generate_world(mut commands: Commands) {
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(10);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(430);
 
     commands.insert_resource(CurrentStop(Some(Stop::Initial)));
-    commands.insert_resource(generate_next_stop(&mut rng, 0.));
+    commands.insert_resource(generate_next_stop(&mut rng, 0., &CurrentStop(None)));
 
     commands.insert_resource(GameWorld { rng });
 }
 
-fn generate_next_stop(rng: &mut impl Rng, current_distance: f32) -> NextStop {
+fn generate_next_stop(rng: &mut impl Rng, current_distance: f32, current_stop: &CurrentStop) -> NextStop {
     let distance = rng.random_range(
-        30.0..=70.0, /*units now in meters but i made these very small to make it easy to test*/
+        60.0..=140.0, /*units now in meters but i made these very small to make it easy to test*/
     ) + current_distance;
     info!("Random f32: {}", distance);
-    let stop = Stop::generate_random(rng);
+    let stop = Stop::generate_random(rng, current_stop);
 
     NextStop {
         name: stop.generate_name(rng),

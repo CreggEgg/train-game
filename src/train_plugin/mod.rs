@@ -31,6 +31,7 @@ pub enum TrainState {
     #[default]
     Stopped,
     Advancing,
+    Arriving,
 }
 
 pub fn train_plugin(app: &mut App) {
@@ -53,7 +54,10 @@ pub fn train_plugin(app: &mut App) {
         FixedUpdate,
         (
             start_advancing.run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
-            move_train.run_if(in_state(TrainState::Advancing).and(in_state(GameState::InGame))),
+            move_train.run_if(
+                (in_state(TrainState::Advancing).or(in_state(TrainState::Arriving)))
+                    .and(in_state(GameState::InGame)),
+            ),
         ),
     )
     .add_systems(
@@ -143,18 +147,20 @@ fn move_train(
 ) {
     let mut train = train.single_mut().unwrap();
 
-    train.velocity += if next_stop.distance - train.distance < 20.0 {
-        -train_stats.acceleration * 1.35
+    train.velocity = if next_stop.distance - train.distance < (train.velocity * 3.1) {
+        (((next_stop.distance - train.distance) * 0.8) + 0.1).min(train.velocity)
     } else {
-        train_stats.acceleration
-    } * time.delta_secs();
-    let min_velocity =
-        ((next_stop.distance - train.distance).squared() * 0.5).min(train_stats.max_velocity * 0.1);
+        train.velocity + train_stats.acceleration * time.delta_secs()
+    };
 
-    train.velocity = train.velocity.clamp(min_velocity, train_stats.max_velocity);
+    train.velocity = train.velocity.min(train_stats.max_velocity);
 
     train.distance += train.velocity * time.delta_secs();
     // info!("Distance: {}", train.distance);
+
+    if next_stop.distance - train.distance < 17.0 {
+        next_state.set(TrainState::Arriving);
+    }
 
     if next_stop.distance - train.distance < 0.1 {
         info!(

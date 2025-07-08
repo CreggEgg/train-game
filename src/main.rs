@@ -42,6 +42,10 @@ struct ImageAssets {
     stop_bg: Handle<Image>,
     #[asset(path = "stop_fg.png")]
     stop_fg: Handle<Image>,
+    #[asset(path = "goblinstop_bg.png")]
+    goblin_stop_bg: Handle<Image>,
+    #[asset(path = "goblinstop_fg.png")]
+    goblin_stop_fg: Handle<Image>,
     #[asset(path = "farm.png")]
     farm: Handle<Image>,
     #[asset(path = "rail.png")]
@@ -56,6 +60,12 @@ struct ImageAssets {
     debug_building: Handle<Image>,
     #[asset(path = "Ground.png")]
     ground: Handle<Image>,
+}
+
+#[derive(AssetCollection, Resource)]
+struct FontAssets {
+    #[asset(path = "fonts/OldLondon.ttf")]
+    town_title_font: Handle<Font>,
 }
 
 fn main() {
@@ -76,7 +86,8 @@ fn main() {
         .add_loading_state(
             LoadingState::new(GameState::Loading)
                 .continue_to_state(GameState::InGame)
-                .load_collection::<ImageAssets>(),
+                .load_collection::<ImageAssets>()
+                .load_collection::<FontAssets>(),
         );
     #[cfg(debug_assertions)]
     app.add_plugins(debug_plugin::debug_plugin);

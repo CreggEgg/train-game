@@ -42,6 +42,10 @@ struct ImageAssets {
     stop_bg: Handle<Image>,
     #[asset(path = "stop_fg.png")]
     stop_fg: Handle<Image>,
+    #[asset(path = "goblinstop_bg.png")]
+    goblin_stop_bg: Handle<Image>,
+    #[asset(path = "goblinstop_fg.png")]
+    goblin_stop_fg: Handle<Image>,
     #[asset(path = "farm.png")]
     farm: Handle<Image>,
     #[asset(path = "rail.png")]

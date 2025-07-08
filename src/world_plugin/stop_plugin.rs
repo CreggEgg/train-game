@@ -1,14 +1,21 @@
-use bevy::prelude::*;
+use std::f32::consts::PI;
+
+use bevy::{ecs::name, prelude::*};
 
 use crate::{
-    GameState, ImageAssets, InGameState, control_panel_plugin::AdvanceBlocker,
-    resources_plugin::Item, ui_state::InMenu,
+    FontAssets, GameState, ImageAssets, InGameState,
+    control_panel_plugin::AdvanceBlocker,
+    resources_plugin::Item,
+    train_plugin::TrainState,
+    ui_state::InMenu,
+    world_plugin::{self, NextStop},
 };
 
 use super::CurrentStop;
 pub fn stop_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_stop_menu)
         .insert_resource(ActiveContracts(Vec::new()))
+        .insert_resource(FadeTime { time: 0. })
         .add_systems(
             Update,
             (
@@ -18,8 +25,11 @@ pub fn stop_plugin(app: &mut App) {
                         .and(in_state(InGameState::Running))
                         .and(in_state(InMenu::StopMenu)),
                 ),
+                fade_title_text
+                    .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
             ),
-        );
+        )
+        .add_systems(OnEnter(TrainState::Arriving), spawn_town_arrival_text);
 }
 
 #[derive(Resource)]
@@ -34,6 +44,62 @@ pub struct Contract {
 struct StopMenu;
 #[derive(Component)]
 struct CloseMenuButton;
+
+#[derive(Component)]
+struct FadeTitleText;
+
+#[derive(Resource)]
+struct FadeTime {
+    time: f32,
+}
+
+fn spawn_town_arrival_text(
+    mut commands: Commands,
+    font_assets: Res<FontAssets>,
+    next_stop: Res<world_plugin::NextStop>,
+    mut fade_time: ResMut<FadeTime>,
+) {
+    let town_name: String = next_stop.name.to_string();
+    println!("arriving at town: {}", town_name);
+
+    commands.spawn((
+        Text::new("Welcome To ".to_string() + &town_name),
+        TextFont {
+            font: font_assets.town_title_font.clone().into(),
+            font_size: 90.0,
+            ..Default::default()
+        },
+        Node {
+            position_type: PositionType::Absolute,
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::Center,
+            bottom: Val::Vh(2.0),
+            ..default()
+        },
+        FadeTitleText,
+    ));
+    fade_time.time = 5.;
+}
+
+fn fade_title_text(
+    mut commands: Commands,
+    mut fade_time: ResMut<FadeTime>,
+    time: Res<Time>,
+    mut text_colors: Query<&mut TextColor, With<FadeTitleText>>,
+    mut entities: Query<Entity, With<FadeTitleText>>,
+) {
+    if fade_time.time > 0. {
+        fade_time.time -= time.delta_secs();
+        for mut text_color in &mut text_colors {
+            text_color.0 =
+                Color::linear_rgba(1.0, 1.0, 1.0, ops::sin((PI / 5.) * fade_time.time).max(0.));
+        }
+    } else {
+        for entity in &mut entities {
+            commands.entity(entity).despawn();
+        }
+    }
+}
 
 fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
     let booth_ratio = 149.0 / 99.0;

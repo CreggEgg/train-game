@@ -31,6 +31,7 @@ pub enum TrainState {
     #[default]
     Stopped,
     Advancing,
+    Arriving,
 }
 
 pub fn train_plugin(app: &mut App) {
@@ -53,7 +54,10 @@ pub fn train_plugin(app: &mut App) {
         FixedUpdate,
         (
             start_advancing.run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
-            move_train.run_if(in_state(TrainState::Advancing).and(in_state(GameState::InGame))),
+            move_train.run_if(
+                (in_state(TrainState::Advancing).or(in_state(TrainState::Arriving)))
+                    .and(in_state(GameState::InGame)),
+            ),
         ),
     )
     .add_systems(
@@ -155,6 +159,10 @@ fn move_train(
 
     train.distance += train.velocity * time.delta_secs();
     // info!("Distance: {}", train.distance);
+
+    if next_stop.distance - train.distance < 17.0 {
+        next_state.set(TrainState::Arriving);
+    }
 
     if next_stop.distance - train.distance < 0.1 {
         info!(

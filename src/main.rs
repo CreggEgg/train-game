@@ -58,6 +58,12 @@ struct ImageAssets {
     ground: Handle<Image>,
 }
 
+#[derive(AssetCollection, Resource)]
+struct FontAssets {
+    #[asset(path = "fonts/OldLondon.ttf")]
+    town_title_font: Handle<Font>,
+}
+
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
@@ -76,7 +82,8 @@ fn main() {
         .add_loading_state(
             LoadingState::new(GameState::Loading)
                 .continue_to_state(GameState::InGame)
-                .load_collection::<ImageAssets>(),
+                .load_collection::<ImageAssets>()
+                .load_collection::<FontAssets>(),
         );
     #[cfg(debug_assertions)]
     app.add_plugins(debug_plugin::debug_plugin);

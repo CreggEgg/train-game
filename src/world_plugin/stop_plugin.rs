@@ -60,6 +60,9 @@ fn spawn_town_arrival_text(
     mut fade_time: ResMut<FadeTime>,
 ) {
     let town_name: String = next_stop.name.to_string();
+    if town_name == "Goblin Ambush" {
+        return;
+    }
     println!("arriving at town: {}", town_name);
 
     commands.spawn((

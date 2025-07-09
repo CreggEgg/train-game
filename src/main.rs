@@ -14,6 +14,7 @@ mod main_menu;
 mod resources_plugin;
 mod train_plugin;
 mod world_plugin;
+mod human;
 
 #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 enum GameState {

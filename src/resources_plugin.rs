@@ -1,5 +1,10 @@
 use bevy::prelude::*;
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone, Copy)]
+pub enum ResourceType {
+    Food,
+}
+
 #[derive(Resource)]
 pub struct Money(pub f32);
 

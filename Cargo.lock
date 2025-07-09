@@ -4143,6 +4143,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_asset_loader",
+ "itertools 0.14.0",
  "rand 0.9.1",
  "rand_chacha 0.9.0",
 ]

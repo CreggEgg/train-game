@@ -1,10 +1,13 @@
-use std::{f32::consts::PI};
+use std::f32::consts::PI;
 
 use bevy::{ecs::entity, prelude::*, render::view::visibility};
 use lerp;
 
 use crate::{
-    train_plugin::{Train, TrainState, TrainStats}, ui_state::InMenu, world_plugin::{self, CurrentStop, NextStop, NumberedStop, Stop}, GameState, ImageAssets, InGameState
+    GameState, ImageAssets, InGameState,
+    train_plugin::{Train, TrainState, TrainStats},
+    ui_state::InMenu,
+    world_plugin::{self, CurrentStop, NextStop, NumberedStop, Stop},
 };
 
 pub fn progress_bar_plugin(app: &mut App) {
@@ -124,7 +127,8 @@ fn update_progress_bar(
 
         for mut map_loco in &mut map_loco_query {
             map_loco.right = Val::Percent(
-                full_right.lerp(full_left, train_progress) - ((sinerp((anim_timer.right_slide_amount+98.)/98.) * 98.) - 98.),
+                full_right.lerp(full_left, train_progress)
+                    - ((sinerp((anim_timer.right_slide_amount + 98.) / 98.) * 98.) - 98.),
             );
         }
     }
@@ -169,7 +173,8 @@ fn animate_progress_bar(
 
         for mut map_pin in &mut map_pin_query {
             if !map_pin.1.right {
-                map_pin.0.right = Val::Percent(96.4.lerp(-1.6, sinerp((anim_timer.time - 0.5) / 1.)));
+                map_pin.0.right =
+                    Val::Percent(96.4.lerp(-1.6, sinerp((anim_timer.time - 0.5) / 1.)));
             }
         }
     }
@@ -190,15 +195,17 @@ fn animate_progress_bar(
             if !map_pin.1.right {
                 map_pin.0.width = Val::Px(full_width * sinerp((anim_timer.time - 1.5) * 2.));
                 map_pin.0.height = Val::Px(full_width * sinerp((anim_timer.time - 1.5) * 2.));
-                map_pin.0.bottom = Val::Percent(70.0.lerp(47., sinerp((anim_timer.time - 1.5) * 2.)));
-                map_pin.0.right = Val::Percent(99.1.lerp(96.4, sinerp((anim_timer.time - 1.5) * 2.)));
+                map_pin.0.bottom =
+                    Val::Percent(70.0.lerp(47., sinerp((anim_timer.time - 1.5) * 2.)));
+                map_pin.0.right =
+                    Val::Percent(99.1.lerp(96.4, sinerp((anim_timer.time - 1.5) * 2.)));
             }
         }
     }
 }
 
 fn sinerp(x: f32) -> f32 {
-    return - (ops::cos(PI * x) - 1.) / 2.
+    return -(ops::cos(PI * x) - 1.) / 2.;
 }
 
 fn update_last_stop_dist(mut last_stop_dist: ResMut<LastStopDist>, train_query: Query<&Train>) {

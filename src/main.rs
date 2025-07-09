@@ -60,6 +60,8 @@ struct ImageAssets {
     debug_building: Handle<Image>,
     #[asset(path = "Ground.png")]
     ground: Handle<Image>,
+    #[asset(path = "map_pin.png")]
+    map_pin: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]

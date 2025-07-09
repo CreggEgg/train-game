@@ -1,9 +1,15 @@
 use core::f32;
+use std::time::Duration;
 
-use bevy::{math::FloatPow, prelude::*, window::PrimaryWindow};
+use bevy::{math::FloatPow, platform::collections::HashMap, prelude::*, window::PrimaryWindow};
 use building_menus::BuildingInspected;
 
-use crate::{GameState, ImageAssets, InGameState, resources_plugin::Inventory, ui_state::InMenu};
+use crate::{
+    GameState, ImageAssets, InGameState,
+    resources_plugin::{Inventory, Item},
+    train_plugin::TrainState,
+    ui_state::InMenu,
+};
 
 // #[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
 // pub enum BuildState {
@@ -47,6 +53,17 @@ impl BuildingType {
             BuildingType::Storage => "Storage",
         }
     }
+
+    fn get_resource_production(&self) -> Option<ResourceProduction> {
+        match self {
+            BuildingType::Housing => None,
+            BuildingType::Farm => Some(ResourceProduction(
+                Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                Item::Food,
+            )),
+            BuildingType::Storage => None,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -57,6 +74,9 @@ struct GhostBuilding;
 
 #[derive(Component)]
 pub struct Building(BuildingType);
+
+#[derive(Component)]
+pub struct ResourceProduction(pub Timer, pub Item);
 
 pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
@@ -99,6 +119,14 @@ pub fn build_plugin(app: &mut App) {
         .add_systems(
             OnEnter(GameState::InGame),
             (spawn_ghost, spawn_blueprint_window),
+        )
+        .add_systems(
+            FixedUpdate,
+            produce_resources.run_if(
+                in_state(GameState::InGame)
+                    .and(in_state(InGameState::Running))
+                    .and(in_state(TrainState::Advancing)),
+            ),
         );
 }
 
@@ -290,10 +318,14 @@ fn on_build(
         let mut building = commands.spawn((
             Sprite::from_image(building_type.get_texture(&image_assets)),
             Transform::from_translation(offset.extend(4.0)),
-            Building(*building_type), // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+            Building(*building_type),
+            // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
             //
             Pickable::default(),
         ));
+        if let Some(resource_production) = building_type.get_resource_production() {
+            building.insert(resource_production);
+        }
         building.with_children(|parent| {
             for build_location in building_type.get_build_locations() {
                 parent.spawn((BuildLocation(build_location), Transform::default()));
@@ -321,5 +353,23 @@ fn on_build(
             },
         );
         commands.entity(parent).add_child(building_id);
+    }
+}
+
+fn produce_resources(
+    mut buildings: Query<&mut ResourceProduction>,
+    mut inventories: Query<&mut Inventory>,
+    time: Res<Time>,
+) {
+    let mut produced_items = HashMap::new();
+    for mut building in &mut buildings {
+        if building.0.tick(time.delta()).just_finished() {
+            *produced_items.entry(building.1.clone()).or_insert(0) += 1;
+        }
+    }
+    for (item, amount) in produced_items {
+        for mut inventory in &mut inventories {
+            *inventory.items.entry(item.clone()).or_insert(0) += amount;
+        }
     }
 }

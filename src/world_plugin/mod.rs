@@ -100,6 +100,7 @@ const FIRST_HALVES: &[&'static str] = &[
     "King",
     "Lang",
     "Pen",
+    "Lynn",
 ];
 const SECOND_HALVES: &[&'static str] = &[
     " Upon Trent",
@@ -119,6 +120,7 @@ const SECOND_HALVES: &[&'static str] = &[
     "ford",
     " Ham",
     "bane",
+    "sylvania",
 ];
 
 fn generate_town_name(rng: &mut impl Rng) -> String {

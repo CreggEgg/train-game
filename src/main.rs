@@ -52,8 +52,8 @@ struct ImageAssets {
     rail: Handle<Image>,
     #[asset(path = "housing.png")]
     housing: Handle<Image>,
-    #[asset(path = "Booth.png")]
-    booth: Handle<Image>,
+    #[asset(path = "Contract.png")]
+    contract: Handle<Image>,
     #[asset(path = "BoothCard.png")]
     booth_card: Handle<Image>,
     #[asset(path = "DebugBuilding.png")]
@@ -66,6 +66,8 @@ struct ImageAssets {
 struct FontAssets {
     #[asset(path = "fonts/OldLondon.ttf")]
     town_title_font: Handle<Font>,
+    #[asset(path = "fonts/Arvo-Regular.ttf")]
+    default_font: Handle<Font>,
 }
 
 fn main() {

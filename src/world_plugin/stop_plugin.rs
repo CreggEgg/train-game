@@ -1,17 +1,21 @@
 use std::f32::consts::PI;
 
-use bevy::{ecs::name, prelude::*};
+use bevy::{
+    color::palettes::css::RED, ecs::name, platform::collections::HashMap, prelude::*,
+    state::commands,
+};
+use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
     FontAssets, GameState, ImageAssets, InGameState,
     control_panel_plugin::AdvanceBlocker,
-    resources_plugin::Item,
+    resources_plugin::{Inventory, Item},
     train_plugin::TrainState,
     ui_state::InMenu,
     world_plugin::{self, NextStop},
 };
 
-use super::CurrentStop;
+use super::{CurrentStop, GameWorld, NumberedStop, Stop};
 pub fn stop_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_stop_menu)
         .insert_resource(ActiveContracts(Vec::new()))
@@ -29,15 +33,54 @@ pub fn stop_plugin(app: &mut App) {
                     .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
             ),
         )
+        .add_systems(
+            OnEnter(TrainState::Stopped),
+            evaluate_contracts
+                .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
+        )
         .add_systems(OnEnter(TrainState::Arriving), spawn_town_arrival_text);
 }
 
 #[derive(Resource)]
 pub struct ActiveContracts(pub Vec<Contract>);
 
+#[derive(Debug, Clone)]
 pub struct Contract {
     pub required: (Item, usize),
     pub reward: (Item, usize),
+    pub stop_number: usize,
+}
+impl Contract {
+    fn generate_random(rng: &mut impl Rng, current_stop_number: usize) -> Self {
+        let variants = [
+            (Item::Food, 1),
+            (Item::Water, 1),
+            (Item::Wood, 1),
+            (Item::Clay, 1),
+            (Item::Brick, 1),
+            (Item::Metal, 1),
+            (Item::Glass, 1),
+            (Item::Bullet, 1),
+            (Item::Money, 1),
+        ];
+        let required = variants
+            .choose_weighted(rng, |(_, w)| *w)
+            .unwrap()
+            .0
+            .clone();
+        let reward = variants
+            .choose_weighted(rng, |(_, w)| *w)
+            .unwrap()
+            .0
+            .clone();
+        let required_amount = rng.random_range(15..100);
+        let multiplier = ((required_amount as f32) / 10.0).max(1.2).sqrt();
+        Contract {
+            required: (required, required_amount),
+            reward: (reward, (required_amount as f32 * multiplier) as usize),
+            stop_number: current_stop_number + rng.random_range(2..=6),
+        }
+    }
 }
 
 #[derive(Component)]
@@ -101,9 +144,13 @@ fn fade_title_text(
     }
 }
 
+#[derive(Component)]
+struct ContractImage;
+
+const CONTRACT_RATIO: f32 = 149.0 / 99.0;
+const CONTRACT_WIDTH: f32 = 200.0;
+
 fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
-    let booth_ratio = 149.0 / 99.0;
-    let booth_width = 200.0;
     commands
         .spawn((
             Node {
@@ -119,8 +166,8 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
         .with_children(|parent| {
             parent
                 .spawn((Node {
-                    width: Val::Px(booth_width * 6.),
-                    height: Val::Px(booth_width * booth_ratio),
+                    width: Val::Px(CONTRACT_WIDTH * 6.),
+                    height: Val::Px(CONTRACT_WIDTH * CONTRACT_RATIO),
                     display: Display::Flex,
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
@@ -130,13 +177,14 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                 .with_children(|parent| {
                     for i in 0..6 {
                         parent.spawn((
+                            ContractImage,
                             Node {
-                                width: Val::Px(booth_width),
-                                height: Val::Px(booth_width * booth_ratio),
+                                width: Val::Px(CONTRACT_WIDTH),
+                                height: Val::Px(CONTRACT_WIDTH * CONTRACT_RATIO),
 
                                 ..Default::default()
                             },
-                            ImageNode::new(image_assets.booth.clone()),
+                            ImageNode::new(image_assets.contract.clone()),
                         ));
                     }
                 });
@@ -154,15 +202,100 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
         });
 }
 
+#[derive(Component)]
+struct ContractDisplay;
+
 fn show_stop_menu(
     current_stop: Res<CurrentStop>,
     mut menu: Query<&mut Visibility, With<StopMenu>>,
     mut menu_state: ResMut<NextState<InMenu>>,
+    mut commands: Commands,
+    contracts: Query<Entity, With<ContractImage>>,
+    mut world: ResMut<GameWorld>,
+    contract_displays: Query<Entity, With<ContractDisplay>>,
 ) {
-    if current_stop.0.is_some() {
+    if let Some(NumberedStop(Stop::Town, current_stop_number)) = current_stop.0 {
         if let Ok(mut menu) = menu.single_mut() {
             *menu = Visibility::Visible;
             menu_state.set(InMenu::StopMenu);
+
+            for contract_display in &contract_displays {
+                commands
+                    .entity(contract_display)
+                    .despawn_related::<Children>()
+                    .despawn();
+            }
+
+            for booth in contracts {
+                let contract = Contract::generate_random(
+                    &mut world.rng,
+                    current_stop.0.clone().map(|it| it.1).unwrap_or(0),
+                );
+                commands.entity(booth).with_children(|booth| {
+                    booth
+                        .spawn((
+                            ContractDisplay,
+                            Node {
+                                // position_type: PositionType::Absolute,
+                                width: Val::Percent(100.0),
+                                height: Val::Percent(100.0),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..Default::default()
+                            },
+                            children![
+                                (
+                                    Text::new(format!(
+                                        "{}x{}",
+                                        contract.required.0.name(),
+                                        contract.required.1
+                                    )),
+                                    TextColor(Color::BLACK)
+                                ),
+                                (Text::new("for"), TextColor(Color::BLACK)),
+                                (
+                                    Text::new(format!(
+                                        "{}x{}",
+                                        contract.reward.0.name(),
+                                        contract.reward.1
+                                    )),
+                                    TextColor(Color::BLACK)
+                                ),
+                                (
+                                    Text::new(format!(
+                                        "in {} stops",
+                                        contract.stop_number - current_stop_number
+                                    )),
+                                    TextColor(Color::BLACK)
+                                ),
+                            ], // BackgroundColor(Color::WHITE),
+                        ))
+                        .with_children(|parent| {
+                            parent
+                                .spawn((
+                                    Node {
+                                        width: Val::Percent(100.0),
+                                        height: Val::Percent(20.0),
+                                        ..Default::default()
+                                    },
+                                    children![(TextColor(RED.into()), Text::new("Sign __"))],
+                                ))
+                                .observe(
+                                    move |mut trigger: Trigger<Pointer<Pressed>>,
+                                     mut commands: Commands,
+                                     mut active_contracts: ResMut<ActiveContracts>| {
+                                        commands
+                                            .entity(trigger.event().target)
+                                            .despawn_related::<Children>()
+                                            .despawn();
+                                        active_contracts.0.push(contract.clone());
+                                    },
+                                );
+                        });
+                });
+            }
         }
     }
 }
@@ -179,5 +312,55 @@ fn hide_stop_menu(
             *menu.single_mut().unwrap() = Visibility::Hidden;
             menu_state.set(InMenu::None);
         }
+    }
+}
+
+fn evaluate_contracts(
+    mut contracts: ResMut<ActiveContracts>,
+    mut inventories: Query<&mut Inventory>,
+    current_stop: Res<CurrentStop>,
+) {
+    info!("Number of contracts: {}", contracts.0.len());
+    dbg!(&contracts.0);
+    dbg!(&current_stop.0.is_some());
+
+    let contracts_to_check = contracts.0.iter().enumerate().filter_map(|(i, contract)| {
+        if contract.stop_number == current_stop.0.clone().map(|it| it.1).unwrap_or(0) {
+            Some(i)
+        } else {
+            None
+        }
+    });
+    let mut to_remove = Vec::with_capacity(contracts.0.len());
+    for i in contracts_to_check {
+        let contract = &contracts.0[i];
+        to_remove.push(i);
+        let total_owned = {
+            let mut total = 0;
+            for mut inventory in &mut inventories {
+                total += *inventory
+                    .items
+                    .entry(contract.required.0.clone())
+                    .or_insert(0);
+            }
+            total
+        };
+        let required = contract.required.1;
+        if total_owned < required {
+            info!("Failed contract");
+            continue;
+        }
+        for mut inventory in &mut inventories {
+            let owned = inventory
+                .items
+                .entry(contract.required.0.clone())
+                .or_insert(0);
+            let actual_given = (*owned).min(required);
+            *owned -= actual_given;
+        }
+        info!("Succeeded contract");
+    }
+    for i in to_remove {
+        contracts.0.remove(i);
     }
 }

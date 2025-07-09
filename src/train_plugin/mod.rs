@@ -176,7 +176,7 @@ fn move_train(
         train.velocity = 0.0;
 
         ev.write(StopEvent {
-            stop: next_stop.stop.clone(),
+            stop: next_stop.stop.0.clone(),
             name: next_stop.name.clone(),
         });
 

@@ -6,6 +6,8 @@ use crate::{
     GameState,
     build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING},
     goblins::Goblin,
+    resources_plugin::Item,
+    world_plugin::stop_plugin::{ActiveContracts, Contract},
 };
 
 const SKIP_MAIN_MENU: bool = true;
@@ -13,6 +15,7 @@ const LOG_DISTANCE: bool = true;
 const BUILD_LOCATION_GIZMO: bool = true;
 const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;
+const START_WITH_CONTRACT: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -26,6 +29,9 @@ pub fn debug_plugin(app: &mut App) {
     }
     if GOBLIN_KILL {
         app.add_systems(Update, kill_goblins);
+    }
+    if START_WITH_CONTRACT {
+        app.add_systems(OnEnter(GameState::InGame), give_debug_contract);
     }
 }
 
@@ -80,4 +86,12 @@ fn kill_goblins(
             commands.entity(g).despawn();
         }
     }
+}
+
+fn give_debug_contract(mut contracts: ResMut<ActiveContracts>) {
+    contracts.0.push(Contract {
+        required: (Item::Wood, 5),
+        reward: (Item::Food, 5),
+        stop_number: 1,
+    });
 }

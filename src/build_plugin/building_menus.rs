@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{GameState, resources_plugin::Inventory, ui_state::InMenu};
+use crate::{FontAssets, GameState, resources_plugin::Inventory, ui_state::InMenu};
 
 use super::Building;
 
@@ -95,6 +95,7 @@ fn update_inspected_building(
     buildings: Query<(&Building, Option<&Inventory>)>,
     building_menu_slot: Single<Entity, With<BuildingMenuSlot>>,
     mut commands: Commands,
+    font_assets: Res<FontAssets>,
 ) {
     let Some(entity) = inspected_building.0 else {
         return;
@@ -110,18 +111,23 @@ fn update_inspected_building(
         .with_children(|parent| {
             parent.spawn((Text::new(building.0.name()), TextColor::BLACK));
             match building.0 {
-                super::BuildingType::Housing => todo!(),
-                super::BuildingType::Farm => todo!(),
+                super::BuildingType::Housing => {}
+                super::BuildingType::Farm => {}
                 super::BuildingType::Storage => {
                     for (item, amount) in &inventory.unwrap().items {
                         // parent.spawn((Text::new(item.name())));
                         parent.spawn((
                             TextColor::BLACK,
                             Text::new(format!("{}x{}", item.name(), amount)),
+                            TextFont::from_font(font_assets.default_font.clone()),
                         ));
                     }
                     if inventory.unwrap().is_empty() {
-                        parent.spawn((TextColor::BLACK, Text::new("Empty")));
+                        parent.spawn((
+                            TextColor::BLACK,
+                            Text::new("Empty"),
+                            TextFont::from_font(font_assets.default_font.clone()),
+                        ));
                     }
                 }
             }

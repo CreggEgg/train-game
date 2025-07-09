@@ -11,7 +11,7 @@ use crate::{
 };
 
 mod goblin_spawner;
-mod stop_plugin;
+pub mod stop_plugin;
 
 #[derive(Clone)]
 pub enum Stop {
@@ -19,6 +19,9 @@ pub enum Stop {
     GoblinAttack { waves: Vec<Vec<GoblinType>> },
     Initial,
 }
+
+#[derive(Clone)]
+pub struct NumberedStop(pub Stop, pub usize);
 
 impl Stop {
     fn spawn_stop(&self, mut commands: Commands, distance: f32, image_assets: Res<ImageAssets>) {
@@ -78,17 +81,23 @@ impl Stop {
                 1,
             ),
         ];
-        
-        if let Some(Stop::GoblinAttack { waves:_ }) = current_stop.0 {
+
+        if let Some(NumberedStop(Stop::GoblinAttack { waves: _ }, _)) = current_stop.0 {
             Stop::Town
-        }
-        else {
+        } else {
             stops.choose_weighted_mut(rng, |(_, w)| *w).unwrap().0(rng)
         }
     }
 }
 
-const FIRST_HALVES: &[&'static str] = &["Snod", "Bell", "South", "Hamburger", "East West", "Hamburger Schlamburger",];
+const FIRST_HALVES: &[&'static str] = &[
+    "Snod",
+    "Bell",
+    "South",
+    "Hamburger",
+    "East West",
+    "Hamburger Schlamburger",
+];
 const SECOND_HALVES: &[&'static str] = &[
     " Upon Trent",
     "sbury",
@@ -125,13 +134,13 @@ pub struct GameWorld {
 
 #[derive(Resource)]
 pub struct NextStop {
-    pub stop: Stop,
+    pub stop: NumberedStop,
     pub distance: f32,
     pub spawned: bool,
     pub name: String,
 }
 #[derive(Resource)]
-pub struct CurrentStop(pub Option<Stop>);
+pub struct CurrentStop(pub Option<NumberedStop>);
 
 #[derive(Event)]
 pub struct GenerateNextStop;
@@ -159,22 +168,29 @@ pub fn world_plugin(app: &mut App) {
              current_stop: Res<CurrentStop>,
              mut game_world: ResMut<GameWorld>,
              train: Query<&Train>| {
-                *next_stop =
-                    generate_next_stop(&mut game_world.rng, train.single().unwrap().distance, &current_stop);
+                *next_stop = generate_next_stop(
+                    &mut game_world.rng,
+                    train.single().unwrap().distance,
+                    &current_stop,
+                );
             },
         );
 }
 
 fn generate_world(mut commands: Commands) {
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(430);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(460);
 
-    commands.insert_resource(CurrentStop(Some(Stop::Initial)));
+    commands.insert_resource(CurrentStop(Some(NumberedStop(Stop::Initial, 0))));
     commands.insert_resource(generate_next_stop(&mut rng, 0., &CurrentStop(None)));
 
     commands.insert_resource(GameWorld { rng });
 }
 
-fn generate_next_stop(rng: &mut impl Rng, current_distance: f32, current_stop: &CurrentStop) -> NextStop {
+fn generate_next_stop(
+    rng: &mut impl Rng,
+    current_distance: f32,
+    current_stop: &CurrentStop,
+) -> NextStop {
     let distance = rng.random_range(
         60.0..=140.0, /*units now in meters but i made these very small to make it easy to test*/
     ) + current_distance;
@@ -183,7 +199,20 @@ fn generate_next_stop(rng: &mut impl Rng, current_distance: f32, current_stop: &
 
     NextStop {
         name: stop.generate_name(rng),
-        stop,
+        stop: NumberedStop(
+            stop,
+            current_stop
+                .0
+                .clone()
+                .map(|it| {
+                    if let Stop::GoblinAttack { .. } = it.0 {
+                        it.1
+                    } else {
+                        it.1 + 1
+                    } //ensure contracts dont expire on goblin stops
+                })
+                .unwrap_or(1),
+        ),
         distance,
         spawned: false,
     }
@@ -212,6 +241,7 @@ fn spawn_stop_assets(
 
         next_stop
             .stop
+            .0
             .spawn_stop(commands, next_stop.distance, image_assets);
     }
 }

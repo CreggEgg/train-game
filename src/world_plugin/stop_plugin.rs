@@ -137,7 +137,7 @@ fn spawn_town_arrival_text(
             position_type: PositionType::Absolute,
             align_self: AlignSelf::Center,
             justify_self: JustifySelf::Center,
-            bottom: Val::Vh(4.2),
+            bottom: Val::Vh(8.),
             ..default()
         },
         FadeTitleText,

@@ -7,10 +7,14 @@ use rand::{
 use crate::{
     GameState, ImageAssets, InGameState,
     train_plugin::{Train, TrainState, TrainStats},
-    world_plugin::goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
+    world_plugin::{
+        goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
+        progress_bar_plugin::progress_bar_plugin,
+    },
 };
 
 mod goblin_spawner;
+mod progress_bar_plugin;
 pub mod stop_plugin;
 
 #[derive(Clone)]
@@ -159,35 +163,38 @@ pub struct CurrentStop(pub Option<NumberedStop>);
 pub struct GenerateNextStop;
 
 pub fn world_plugin(app: &mut App) {
-    app.add_plugins(stop_plugin::stop_plugin)
-        .add_systems(OnEnter(GameState::Loading), generate_world)
-        .add_systems(
-            FixedUpdate,
-            (move_world_objects, spawn_stop_assets, loop_rails)
-                .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
-        )
-        .add_systems(OnEnter(GameState::InGame), spawn_rails)
-        .add_systems(
-            FixedUpdate,
-            spawn_goblins.run_if(
-                in_state(GameState::InGame)
-                    .and(in_state(InGameState::Running))
-                    .and(in_state(TrainState::Stopped)),
-            ),
-        )
-        .add_observer(
-            |_trigger: Trigger<GenerateNextStop>,
-             mut next_stop: ResMut<NextStop>,
-             current_stop: Res<CurrentStop>,
-             mut game_world: ResMut<GameWorld>,
-             train: Query<&Train>| {
-                *next_stop = generate_next_stop(
-                    &mut game_world.rng,
-                    train.single().unwrap().distance,
-                    &current_stop,
-                );
-            },
-        );
+    app.add_plugins((
+        stop_plugin::stop_plugin,
+        progress_bar_plugin::progress_bar_plugin,
+    ))
+    .add_systems(OnEnter(GameState::Loading), generate_world)
+    .add_systems(
+        FixedUpdate,
+        (move_world_objects, spawn_stop_assets, loop_rails)
+            .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
+    )
+    .add_systems(OnEnter(GameState::InGame), spawn_rails)
+    .add_systems(
+        FixedUpdate,
+        spawn_goblins.run_if(
+            in_state(GameState::InGame)
+                .and(in_state(InGameState::Running))
+                .and(in_state(TrainState::Stopped)),
+        ),
+    )
+    .add_observer(
+        |_trigger: Trigger<GenerateNextStop>,
+         mut next_stop: ResMut<NextStop>,
+         current_stop: Res<CurrentStop>,
+         mut game_world: ResMut<GameWorld>,
+         train: Query<&Train>| {
+            *next_stop = generate_next_stop(
+                &mut game_world.rng,
+                train.single().unwrap().distance,
+                &current_stop,
+            );
+        },
+    );
 }
 
 fn generate_world(mut commands: Commands) {

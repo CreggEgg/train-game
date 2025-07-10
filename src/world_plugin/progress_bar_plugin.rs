@@ -21,7 +21,13 @@ pub fn progress_bar_plugin(app: &mut App) {
     .add_systems(
         Update,
         (
-            (update_last_stop_dist, start_anim_timer).run_if(resource_changed::<CurrentStop>),
+            (update_last_stop_dist, start_anim_timer).run_if(
+                resource_exists::<CurrentStop>.and(
+                    resource_changed::<CurrentStop>
+                        .and(in_state(GameState::InGame))
+                        .and(in_state(InGameState::Running)),
+                ),
+            ),
             update_progress_bar
                 .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
             animate_progress_bar

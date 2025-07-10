@@ -10,7 +10,9 @@ pub fn building_menus_plugin(app: &mut App) {
         .add_systems(OnExit(InMenu::BuildingMenu), hide_building_menu)
         .add_systems(
             FixedUpdate,
-            update_inspected_building.run_if(resource_changed::<BuildingInspected>),
+            update_inspected_building.run_if(
+                resource_exists::<BuildingInspected>.and(resource_changed::<BuildingInspected>),
+            ),
         )
         .insert_resource(BuildingInspected(None));
     // .add_event::<InspectBuilding>();

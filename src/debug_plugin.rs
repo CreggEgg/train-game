@@ -10,7 +10,7 @@ use crate::{
     world_plugin::stop_plugin::{ActiveContracts, Contract},
 };
 
-const SKIP_MAIN_MENU: bool = true;
+const SKIP_MAIN_MENU: bool = false;
 const LOG_DISTANCE: bool = true;
 const BUILD_LOCATION_GIZMO: bool = true;
 const ZOOM_CAMERA_OUT: bool = true;

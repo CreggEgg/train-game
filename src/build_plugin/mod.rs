@@ -96,6 +96,7 @@ pub fn build_plugin(app: &mut App) {
             update_ghost.run_if(
                 in_state(InMenu::BuildMenu)
                     .and(in_state(GameState::InGame))
+                    .and(resource_exists::<BuildingType>)
                     .and(resource_changed::<BuildingType>),
             ),
         )
@@ -370,6 +371,7 @@ fn produce_resources(
     for (item, amount) in produced_items {
         for mut inventory in &mut inventories {
             *inventory.items.entry(item.clone()).or_insert(0) += amount;
+            break;
         }
     }
 }

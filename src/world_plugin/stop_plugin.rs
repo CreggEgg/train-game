@@ -23,7 +23,8 @@ pub fn stop_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                show_stop_menu.run_if(resource_changed::<CurrentStop>),
+                show_stop_menu
+                    .run_if(resource_exists::<CurrentStop>.and(resource_changed::<CurrentStop>)),
                 hide_stop_menu.run_if(
                     in_state(GameState::InGame)
                         .and(in_state(InGameState::Running))
@@ -360,6 +361,13 @@ fn evaluate_contracts(
                 .or_insert(0);
             let actual_given = (*owned).min(required);
             *owned -= actual_given;
+        }
+
+        for mut inventory in &mut inventories {
+            *inventory
+                .items
+                .entry(contract.reward.0.clone())
+                .or_insert(0) += contract.reward.1;
         }
         info!("Succeeded contract");
     }

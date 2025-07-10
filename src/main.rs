@@ -74,25 +74,39 @@ struct FontAssets {
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins((
-            train_plugin::train_plugin,
-            camera_plugin::camera_plugin,
-            world_plugin::world_plugin,
-            control_panel_plugin::control_panel_plugin,
-            build_plugin::build_plugin,
-            main_menu::main_menu_plugin,
-            resources_plugin::resources_plugin,
-        ))
-        .init_state::<InGameState>()
-        .init_state::<GameState>()
-        .init_state::<InMenu>()
-        .add_loading_state(
-            LoadingState::new(GameState::Loading)
-                .continue_to_state(GameState::InGame)
-                .load_collection::<ImageAssets>()
-                .load_collection::<FontAssets>(),
-        );
+    app.add_plugins(
+        DefaultPlugins
+            .set(ImagePlugin::default_nearest())
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    fit_canvas_to_parent: true,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .set(AssetPlugin {
+                meta_check: bevy::asset::AssetMetaCheck::Never,
+                ..Default::default()
+            }),
+    )
+    .add_plugins((
+        train_plugin::train_plugin,
+        camera_plugin::camera_plugin,
+        world_plugin::world_plugin,
+        control_panel_plugin::control_panel_plugin,
+        build_plugin::build_plugin,
+        main_menu::main_menu_plugin,
+        resources_plugin::resources_plugin,
+    ))
+    .init_state::<InGameState>()
+    .init_state::<GameState>()
+    .init_state::<InMenu>()
+    .add_loading_state(
+        LoadingState::new(GameState::Loading)
+            .continue_to_state(GameState::InGame)
+            .load_collection::<ImageAssets>()
+            .load_collection::<FontAssets>(),
+    );
     #[cfg(debug_assertions)]
     app.add_plugins(debug_plugin::debug_plugin);
     app.run();

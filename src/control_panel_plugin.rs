@@ -20,8 +20,11 @@ pub fn control_panel_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            update_next_town_display
-                .run_if(resource_changed::<NextStop>.and(in_state(GameState::InGame))),
+            update_next_town_display.run_if(
+                resource_exists::<NextStop>
+                    .and(resource_changed::<NextStop>)
+                    .and(in_state(GameState::InGame)),
+            ),
         )
         .add_systems(
             OnEnter(InMenu::BuildMenu),

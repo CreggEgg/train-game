@@ -112,8 +112,6 @@ struct Signature {
     visible: bool,
 }
 
-#[derive(Component)]
-struct Marker;
 
 fn spawn_town_arrival_text(
     mut commands: Commands,
@@ -302,7 +300,7 @@ fn show_stop_menu(
                                         width: Val::Percent(100.0),
                                         height: Val::Percent(20.0),
                                         ..Default::default()
-                                    }, Marker,
+                                    },
                                     children![(TextColor(RED.into()), Text::new("Sign __"))],
                                 ))
                                 .observe(

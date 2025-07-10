@@ -7,6 +7,7 @@ use rand::{
 use crate::{
     GameState, ImageAssets, InGameState,
     train_plugin::{Train, TrainState, TrainStats},
+    ui_state::InMenu,
     world_plugin::{
         goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
         progress_bar_plugin::progress_bar_plugin,
@@ -16,6 +17,10 @@ use crate::{
 mod goblin_spawner;
 mod progress_bar_plugin;
 pub mod stop_plugin;
+
+#[derive(Component)]
+#[require(Pickable::default())]
+pub struct WorldClickable;
 
 #[derive(Clone)]
 pub enum Stop {
@@ -31,21 +36,33 @@ impl Stop {
     fn spawn_stop(&self, mut commands: Commands, distance: f32, image_assets: Res<ImageAssets>) {
         match self {
             Stop::Town => {
-                commands.spawn((
-                    NextStopImage,
-                    Transform::from_xyz(-distance * METERS_PER_UNIT, 0., -10.),
-                    WorldObject(distance),
-                    children![
-                        (
-                            Sprite::from_image(image_assets.stop_bg.clone()),
-                            Transform::from_xyz(0., 0., -25.0)
-                        ),
-                        (
+                commands
+                    .spawn((
+                        NextStopImage,
+                        Transform::from_xyz(-distance * METERS_PER_UNIT, 0., -10.),
+                        WorldObject(distance),
+                    ))
+                    .with_children(|parent| {
+                        parent
+                            .spawn((
+                                Sprite::from_image(image_assets.stop_bg.clone()),
+                                Transform::from_xyz(0., 0., -25.0),
+                                WorldClickable
+                            ))
+                            .observe(
+                                |mut trigger: Trigger<Pointer<Pressed>>,
+                                train_state: Res<State<TrainState>>,
+                                 menu_state: Res<State<InMenu>>, mut next_state: ResMut<NextState<InMenu>>| {
+                                    if *menu_state == InMenu::None && *train_state == TrainState::Stopped {
+                                        next_state.set(InMenu::StopMenu);
+                                    }
+                                },
+                            );
+                        parent.spawn((
                             Sprite::from_image(image_assets.stop_fg.clone()),
-                            Transform::from_xyz(0., 0., 25.0)
-                        )
-                    ],
-                ));
+                            Transform::from_xyz(0., 0., 25.0),
+                        ));
+                    });
             }
             Stop::Initial => {}
             Stop::GoblinAttack { waves } => {

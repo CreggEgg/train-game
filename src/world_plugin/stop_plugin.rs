@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::RED,
+    color::palettes::css::{RED, YELLOW},
     ecs::{
         name,
         relationship::{RelatedSpawnerCommands, Relationship},
@@ -27,6 +27,18 @@ pub fn stop_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_stop_menu)
         .insert_resource(ActiveContracts(Vec::new()))
         .insert_resource(FadeTime { time: 0. })
+        .add_systems(
+            OnEnter(InMenu::StopMenu),
+            |mut menu: Single<&mut Visibility, With<StopMenu>>| {
+                **menu = Visibility::Visible;
+            },
+        )
+        .add_systems(
+            OnExit(InMenu::StopMenu),
+            |mut menu: Single<&mut Visibility, With<StopMenu>>| {
+                **menu = Visibility::Hidden;
+            },
+        )
         .add_systems(
             Update,
             (
@@ -299,13 +311,18 @@ fn show_stop_menu(
                                     Node {
                                         width: Val::Percent(100.0),
                                         height: Val::Percent(20.0),
+                                        display: Display::Flex,
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
                                         ..Default::default()
                                     },
-                                )).with_children(|parent| {
+                                    // BackgroundColor(YELLOW.into()),
+                                ))
+                                .with_children(|parent| {
                                     parent.spawn((
                                         TextColor(RED.into()), Text::new("Sign __"),
-                                    ));
-                                })
+                                    ))
+
                                 .observe(
                                     move |mut trigger: Trigger<Pointer<Pressed>>,
                                      mut commands: Commands,
@@ -335,10 +352,12 @@ fn show_stop_menu(
                                         commands
                                             .entity(trigger.event().target)
                                             .despawn_related::<Children>()
+                                            // .despawn_related::<ChildOf>()
                                             .despawn();
                                         active_contracts.0.push(contract.clone());
-                                    },
-                                );
+                                    }
+                                    );
+                                });
                         });
                 });
             }
@@ -355,7 +374,6 @@ fn hide_stop_menu(
 ) {
     for (interaction, button) in &interaction_query {
         if *interaction == Interaction::Pressed {
-            *menu.single_mut().unwrap() = Visibility::Hidden;
             menu_state.set(InMenu::None);
         }
     }

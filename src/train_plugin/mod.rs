@@ -36,7 +36,7 @@ pub enum TrainState {
 
 pub fn train_plugin(app: &mut App) {
     app.insert_resource(TrainStats {
-        length: 1,
+        length: 2,
         acceleration: 1.0,
         max_velocity: 27.0,
     })
@@ -66,10 +66,12 @@ pub fn train_plugin(app: &mut App) {
     );
 }
 
-pub const CAR_SIZE: f32 = 140.0;
+pub const CAR_SIZE: f32 = 144.0;
 
 #[derive(Component)]
 pub struct Locomotive;
+#[derive(Component)]
+pub struct Caboose;
 #[derive(Component)]
 pub struct TrainCar;
 #[derive(Component)]
@@ -119,6 +121,12 @@ fn spawn_train(
                     ],
                 ));
             }
+            parent.spawn((
+                Sprite::from_image(image_assets.train_caboose.clone()),
+                Name::new("Caboose"),
+                Caboose,
+                Transform::from_xyz(CAR_SIZE * (train_stats.length as f32 + 1.), 0., 0.),
+            ));
         });
 }
 

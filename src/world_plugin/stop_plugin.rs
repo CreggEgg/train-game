@@ -1,7 +1,14 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::RED, ecs::name, platform::collections::HashMap, prelude::*,
+    color::palettes::css::RED,
+    ecs::{
+        name,
+        relationship::{RelatedSpawnerCommands, Relationship},
+    },
+    platform::collections::HashMap,
+    prelude::*,
+    reflect::Array,
     state::commands,
 };
 use rand::{Rng, seq::IndexedRandom};
@@ -31,6 +38,8 @@ pub fn stop_plugin(app: &mut App) {
                         .and(in_state(InMenu::StopMenu)),
                 ),
                 fade_title_text
+                    .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
+                handle_signature_animation
                     .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
             ),
         )
@@ -97,6 +106,15 @@ struct FadeTime {
     time: f32,
 }
 
+#[derive(Component)]
+struct Signature {
+    time: f32,
+    visible: bool,
+}
+
+#[derive(Component)]
+struct Marker;
+
 fn spawn_town_arrival_text(
     mut commands: Commands,
     font_assets: Res<FontAssets>,
@@ -120,7 +138,7 @@ fn spawn_town_arrival_text(
             position_type: PositionType::Absolute,
             align_self: AlignSelf::Center,
             justify_self: JustifySelf::Center,
-            bottom: Val::Vh(2.0),
+            bottom: Val::Vh(8.),
             ..default()
         },
         FadeTitleText,
@@ -284,12 +302,50 @@ fn show_stop_menu(
                                         height: Val::Percent(20.0),
                                         ..Default::default()
                                     },
-                                    children![(TextColor(RED.into()), Text::new("Sign __"))],
+                                    children![(TextColor(RED.into()), Text::new("Sign __"), Marker)],
                                 ))
                                 .observe(
                                     move |mut trigger: Trigger<Pointer<Pressed>>,
                                      mut commands: Commands,
-                                     mut active_contracts: ResMut<ActiveContracts>| {
+                                     mut active_contracts: ResMut<ActiveContracts>,
+                                     contract_displays: Query<(Entity, &Children), With<ContractDisplay>>,
+                                     marker_query: Query<(Entity, &ChildOf), With<Marker>>,
+                                     image_assets: Res<'_, ImageAssets>,
+                                     | {
+                                        let event_target_id = trigger.event().target;
+                                        for marker in marker_query {
+                                            let marker_id = marker.0;
+                                            if marker_id == event_target_id {
+                                                let marker_parent_id = marker.1.parent();
+
+                                                for contract_display in contract_displays {
+                                                    for child in contract_display.1 {
+                                                        let child_id = *child;
+
+                                                        if marker_parent_id == child_id {
+                                                            commands.entity(contract_display.0).with_child(
+                                                                (
+                                                                    Node {
+                                                                        position_type: PositionType::Absolute,
+                                                                        width: Val::Px(300. * 0.55),
+                                                                        height: Val::Px(167. * 0.55),
+                                                                        bottom: Val::Px(86.),
+                                                                        left: Val::Px(-13.),
+                                                                        ..Default::default()
+                                                                    },
+                                                                    ImageNode::new(image_assets.signature_1.clone())
+                                                                        .with_color(Color::linear_rgba(1., 1., 1., 1.)),
+                                                                    Signature {
+                                                                        time: 0.,
+                                                                        visible: true,
+                                                                    }
+                                                                ),
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                         commands
                                             .entity(trigger.event().target)
                                             .despawn_related::<Children>()
@@ -315,6 +371,39 @@ fn hide_stop_menu(
         if *interaction == Interaction::Pressed {
             *menu.single_mut().unwrap() = Visibility::Hidden;
             menu_state.set(InMenu::None);
+        }
+    }
+}
+
+fn handle_signature_animation(
+    mut commands: Commands,
+    mut signatures: Query<(&mut ImageNode, &mut Signature)>,
+    time: Res<Time>,
+    image_assets: Res<ImageAssets>,
+) {
+    let anim_images: [Handle<Image>; 13] = [
+        image_assets.signature_1.clone(),
+        image_assets.signature_2.clone(),
+        image_assets.signature_3.clone(),
+        image_assets.signature_4.clone(),
+        image_assets.signature_5.clone(),
+        image_assets.signature_6.clone(),
+        image_assets.signature_7.clone(),
+        image_assets.signature_8.clone(),
+        image_assets.signature_9.clone(),
+        image_assets.signature_10.clone(),
+        image_assets.signature_11.clone(),
+        image_assets.signature_12.clone(),
+        image_assets.signature_13.clone(),
+    ];
+
+    for mut signature in &mut signatures {
+        signature.1.time += time.delta_secs();
+        if signature.1.time > 0. && signature.1.time <= (13. / 8.) {
+            let idx = ops::floor(signature.1.time * 8.) as usize;
+            signature.0.image = anim_images[idx].clone();
+        } else {
+            signature.0.image = anim_images[12].clone();
         }
     }
 }

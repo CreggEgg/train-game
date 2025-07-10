@@ -62,6 +62,32 @@ struct ImageAssets {
     ground: Handle<Image>,
     #[asset(path = "map_pin.png")]
     map_pin: Handle<Image>,
+    #[asset(path = "signature_anim/signature1.png")]
+    signature_1: Handle<Image>,
+    #[asset(path = "signature_anim/signature2.png")]
+    signature_2: Handle<Image>,
+    #[asset(path = "signature_anim/signature3.png")]
+    signature_3: Handle<Image>,
+    #[asset(path = "signature_anim/signature4.png")]
+    signature_4: Handle<Image>,
+    #[asset(path = "signature_anim/signature5.png")]
+    signature_5: Handle<Image>,
+    #[asset(path = "signature_anim/signature6.png")]
+    signature_6: Handle<Image>,
+    #[asset(path = "signature_anim/signature7.png")]
+    signature_7: Handle<Image>,
+    #[asset(path = "signature_anim/signature8.png")]
+    signature_8: Handle<Image>,
+    #[asset(path = "signature_anim/signature9.png")]
+    signature_9: Handle<Image>,
+    #[asset(path = "signature_anim/signature10.png")]
+    signature_10: Handle<Image>,
+    #[asset(path = "signature_anim/signature11.png")]
+    signature_11: Handle<Image>,
+    #[asset(path = "signature_anim/signature12.png")]
+    signature_12: Handle<Image>,
+    #[asset(path = "signature_anim/signature13.png")]
+    signature_13: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]

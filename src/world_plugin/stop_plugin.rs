@@ -112,9 +112,6 @@ struct Signature {
     visible: bool,
 }
 
-#[derive(Component)]
-struct Marker;
-
 fn spawn_town_arrival_text(
     mut commands: Commands,
     font_assets: Res<FontAssets>,
@@ -265,6 +262,7 @@ fn show_stop_menu(
                                 flex_direction: FlexDirection::Column,
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
+
                                 ..Default::default()
                             },
                             children![
@@ -302,9 +300,12 @@ fn show_stop_menu(
                                         width: Val::Percent(100.0),
                                         height: Val::Percent(20.0),
                                         ..Default::default()
-                                    }, Marker,
-                                    children![(TextColor(RED.into()), Text::new("Sign __"))],
-                                ))
+                                    },
+                                )).with_children(|parent| {
+                                    parent.spawn((
+                                        TextColor(RED.into()), Text::new("Sign __"),
+                                    ));
+                                })
                                 .observe(
                                     move |mut trigger: Trigger<Pointer<Pressed>>,
                                      mut commands: Commands,
@@ -331,7 +332,6 @@ fn show_stop_menu(
                                                 }
                                             ),
                                         );
-                                        
                                         commands
                                             .entity(trigger.event().target)
                                             .despawn_related::<Children>()

@@ -325,8 +325,11 @@ fn show_stop_menu(
                                                             commands.entity(contract_display.0).with_child(
                                                                 (
                                                                     Node {
-                                                                        width: Val::Px(300. * 0.7),
-                                                                        height: Val::Px(167. * 0.7),
+                                                                        position_type: PositionType::Absolute,
+                                                                        width: Val::Px(300. * 0.55),
+                                                                        height: Val::Px(167. * 0.55),
+                                                                        bottom: Val::Px(86.),
+                                                                        left: Val::Px(-13.),
                                                                         ..Default::default()
                                                                     },
                                                                     ImageNode::new(image_assets.signature_1.clone())

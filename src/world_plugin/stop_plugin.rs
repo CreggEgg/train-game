@@ -309,40 +309,36 @@ fn show_stop_menu(
                                      mut commands: Commands,
                                      mut active_contracts: ResMut<ActiveContracts>,
                                      contract_displays: Query<(Entity, &Children), With<ContractDisplay>>,
-                                     marker_query: Query<(Entity, &ChildOf), With<Marker>>,
+                                     marker_query: Query<&ChildOf, With<Marker>>,
                                      image_assets: Res<'_, ImageAssets>,
                                      | {
+                                        trigger.propagate(false);
+                                        
                                         let event_target_id = trigger.event().target;
-                                        for marker in marker_query {
-                                            let marker_id = marker.0;
-                                            if marker_id == event_target_id {
-                                                let marker_parent_id = marker.1.parent();
+                                        
+                                        for contract_display in contract_displays {
+                                            for child in contract_display.1 {
+                                                let child_id = *child;
 
-                                                for contract_display in contract_displays {
-                                                    for child in contract_display.1 {
-                                                        let child_id = *child;
-
-                                                        if marker_parent_id == child_id {
-                                                            commands.entity(contract_display.0).with_child(
-                                                                (
-                                                                    Node {
-                                                                        position_type: PositionType::Absolute,
-                                                                        width: Val::Px(300. * 0.55),
-                                                                        height: Val::Px(167. * 0.55),
-                                                                        bottom: Val::Px(86.),
-                                                                        left: Val::Px(-13.),
-                                                                        ..Default::default()
-                                                                    },
-                                                                    ImageNode::new(image_assets.signature_1.clone())
-                                                                        .with_color(Color::linear_rgba(1., 1., 1., 1.)),
-                                                                    Signature {
-                                                                        time: 0.,
-                                                                        visible: true,
-                                                                    }
-                                                                ),
-                                                            );
-                                                        }
-                                                    }
+                                                if marker_query.get(event_target_id).unwrap().0 == child_id {
+                                                    commands.entity(contract_display.0).with_child(
+                                                        (
+                                                            Node {
+                                                                position_type: PositionType::Absolute,
+                                                                width: Val::Px(300. * 0.55),
+                                                                height: Val::Px(167. * 0.55),
+                                                                bottom: Val::Px(86.),
+                                                                left: Val::Px(-13.),
+                                                                ..Default::default()
+                                                            },
+                                                            ImageNode::new(image_assets.signature_1.clone())
+                                                                .with_color(Color::linear_rgba(1., 1., 1., 1.)),
+                                                            Signature {
+                                                                time: 0.,
+                                                                visible: true,
+                                                            }
+                                                        ),
+                                                    );
                                                 }
                                             }
                                         }

@@ -302,6 +302,18 @@ fn show_stop_menu(
                                     )),
                                     TextColor(Color::BLACK)
                                 ),
+                                (
+                                    Node {
+                                        position_type: PositionType::Absolute,
+                                        bottom: Val::Percent(30.0),
+                                        left: Val::Percent(21.),
+                                        ..Default::default()
+                                    },
+                                    Text::new(format!(
+                                        "X",
+                                    )),
+                                    TextColor(Color::BLACK)
+                                ),
                             ], // BackgroundColor(Color::WHITE),
                         ))
                         .with_children(|parent| {
@@ -310,17 +322,21 @@ fn show_stop_menu(
                                 .spawn((
                                     Node {
                                         width: Val::Percent(100.0),
-                                        height: Val::Percent(20.0),
+                                        height: Val::Percent(30.0),
                                         display: Display::Flex,
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
                                         ..Default::default()
                                     },
-                                    // BackgroundColor(YELLOW.into()),
+                                    //BackgroundColor(YELLOW.into()),
                                 ))
                                 .with_children(|parent| {
                                     parent.spawn((
-                                        TextColor(RED.into()), Text::new("Sign __"),
+                                        TextColor(Color::BLACK), Text::new("        "),
+                                        Node {
+                                            height: Val::Percent(80.),
+                                            ..Default::default()
+                                        }
                                     ))
 
                                 .observe(
@@ -335,10 +351,10 @@ fn show_stop_menu(
                                             (
                                                 Node {
                                                     position_type: PositionType::Absolute,
-                                                    width: Val::Px(300. * 0.55),
-                                                    height: Val::Px(167. * 0.55),
+                                                    width: Val::Px(300. * 0.5),
+                                                    height: Val::Px(167. * 0.5),
                                                     bottom: Val::Px(86.),
-                                                    left: Val::Px(-13.),
+                                                    left: Val::Px(1.),
                                                     ..Default::default()
                                                 },
                                                 ImageNode::new(image_assets.signature_1.clone())

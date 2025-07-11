@@ -309,9 +309,7 @@ fn show_stop_menu(
                                         left: Val::Percent(21.),
                                         ..Default::default()
                                     },
-                                    Text::new(format!(
-                                        "X",
-                                    )),
+                                    Text::new(format!("X",)),
                                     TextColor(Color::BLACK)
                                 ),
                             ], // BackgroundColor(Color::WHITE),

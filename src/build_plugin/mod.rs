@@ -31,6 +31,7 @@ impl BuildingType {
         match self {
             BuildingType::Housing => image_assets.housing.clone(),
             BuildingType::Farm => image_assets.farm.clone(),
+            BuildingType::Storage => image_assets.shipping_container.clone(),
             _ => image_assets.debug_building.clone(),
         }
     }

@@ -1,7 +1,7 @@
 use crate::{
     control_panel_plugin::AdvanceBlocker,
     goblins::Goblin,
-    train_plugin::{MaxPixelHeightOfTrain, TrainStats},
+    train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
 };
 use bevy::prelude::*;
 
@@ -33,7 +33,7 @@ pub fn spawn_goblins(
     goblins: Query<&Goblin>,
     train_height: Res<MaxPixelHeightOfTrain>,
     mut commands: Commands,
-    train_stats: Res<TrainStats>,
+    train_length: Res<TrainLength>,
 ) {
     let len = goblins.iter().len();
 
@@ -50,7 +50,7 @@ pub fn spawn_goblins(
 
             let t = s.0.waves[s.0.current_wave].len();
 
-            let spread = train_stats.train_size() + SPREAD * 2.0;
+            let spread = train_length.train_size() + SPREAD * 2.0;
 
             for (i, g) in s.0.waves[s.0.current_wave].iter().enumerate() {
                 match g {

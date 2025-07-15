@@ -6,7 +6,7 @@ use rand::{
 
 use crate::{
     GameState, ImageAssets, InGameState,
-    train_plugin::{Train, TrainState, TrainStats},
+    train_plugin::{Train, TrainLength, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{
         goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
@@ -94,7 +94,7 @@ impl Stop {
 
     fn generate_random<R: Rng>(rng: &mut R, current_stop: &CurrentStop) -> Self {
         let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 2] = [
-            (&mut |_| Stop::Town, 5),
+            (&mut |_| Stop::Town, 3),
             (
                 &mut |rng| Stop::GoblinAttack {
                     waves: generate_waves(rng),
@@ -288,7 +288,7 @@ fn spawn_stop_assets(
 fn move_world_objects(
     mut objs: Query<(&mut Transform, &WorldObject, Entity)>,
     train: Query<&Train>,
-    train_stats: Res<TrainStats>,
+    train_length: Res<TrainLength>,
     mut commands: Commands,
 ) {
     for mut obj in &mut objs {
@@ -300,7 +300,7 @@ fn move_world_objects(
         // and also give some le way so it isn't too easy to see the despawned area
         obj.0.translation.x = newx;
 
-        if newx > (train_stats.train_size() + 4000.0) {
+        if newx > (train_length.train_size() + 4000.0) {
             commands.entity(obj.2).despawn();
             info!("despawning world object");
         }

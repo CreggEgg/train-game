@@ -14,15 +14,18 @@ pub struct MaxPixelHeightOfTrain {
 }
 
 #[derive(Resource)]
+pub struct TrainLength(pub usize);
+
+#[derive(Resource)]
 pub struct TrainStats {
-    pub length: usize,
+    // pub length: usize,
     pub acceleration: f32,
     pub max_velocity: f32,
 }
 
-impl TrainStats {
+impl TrainLength {
     pub fn train_size(&self) -> f32 {
-        (self.length as f32) * CAR_SIZE
+        (self.0 as f32) * CAR_SIZE
     }
 }
 
@@ -36,14 +39,15 @@ pub enum TrainState {
 
 pub fn train_plugin(app: &mut App) {
     app.insert_resource(TrainStats {
-        length: 2,
         acceleration: 1.0,
         max_velocity: 27.0,
     })
+    .insert_resource(TrainLength(1))
     .add_event::<AdvanceEvent>()
     .add_event::<StopEvent>()
     .init_state::<TrainState>()
     .add_systems(OnEnter(GameState::InGame), spawn_train)
+    .add_systems(Update, update_train.run_if(resource_changed::<TrainLength>))
     .init_resource::<MaxPixelHeightOfTrain>()
     .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
     .add_systems(
@@ -92,7 +96,7 @@ pub struct StopEvent {
 fn spawn_train(
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
-    train_stats: Res<TrainStats>,
+    train_length: Res<TrainLength>,
 ) {
     commands
         .spawn((
@@ -109,7 +113,7 @@ fn spawn_train(
                 Name::new("Locomotive"),
                 Locomotive,
             ));
-            for i in 0..train_stats.length {
+            for i in 0..train_length.0 {
                 parent.spawn((
                     Sprite::from_image(image_assets.train_car.clone()),
                     Name::new(format!("Car{i}")),
@@ -125,9 +129,31 @@ fn spawn_train(
                 Sprite::from_image(image_assets.train_caboose.clone()),
                 Name::new("Caboose"),
                 Caboose,
-                Transform::from_xyz(CAR_SIZE * (train_stats.length as f32 + 1.), 0., 0.),
+                Transform::from_xyz(CAR_SIZE * (train_length.0 as f32 + 1.), 0., 0.),
             ));
         });
+}
+
+fn update_train(
+    train_length: Res<TrainLength>,
+    mut commands: Commands,
+    mut caboose: Single<&mut Transform, With<Caboose>>,
+    train: Single<Entity, With<Train>>,
+    image_assets: Res<ImageAssets>,
+) {
+    println!("train updated");
+    caboose.translation.x = CAR_SIZE * (train_length.0 as f32 + 1.);
+    let i = train_length.0 - 1;
+    commands.entity(*train).with_child((
+        Sprite::from_image(image_assets.train_car.clone()),
+        Name::new(format!("Car{i}")),
+        TrainCar,
+        Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
+        children![
+            (BuildLocation(Vec2::new(-30.0, 0.0)), Transform::default()),
+            (BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())
+        ],
+    ));
 }
 
 fn start_advancing(

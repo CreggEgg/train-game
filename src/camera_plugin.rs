@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState,
-    train_plugin::{MaxPixelHeightOfTrain, TrainStats},
+    train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
 };
 
 #[derive(Default, Resource)]
@@ -41,11 +41,11 @@ fn move_camera(
     mut camera: Query<&mut Transform, With<Camera>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-    train_stats: Res<TrainStats>,
+    train_length: Res<TrainLength>,
     height: Res<MaxPixelHeightOfTrain>,
     mut camera_speeds: ResMut<CameraSpeeds>,
 ) {
-    let train_length = train_stats.train_size();
+    let train_length = train_length.train_size();
 
     let mut acelx = 0.0f32;
     let mut acely = 0.0f32;

@@ -17,7 +17,7 @@ use crate::{
     FontAssets, GameState, ImageAssets, InGameState,
     control_panel_plugin::AdvanceBlocker,
     resources_plugin::{Inventory, Item},
-    train_plugin::TrainState,
+    train_plugin::{TrainLength, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{self, NextStop},
 };
@@ -72,29 +72,38 @@ pub struct Contract {
     pub reward: (Item, usize),
     pub stop_number: usize,
 }
+
+const REWARDS: &[(Item, usize)] = &[
+    (Item::Food, 1),
+    (Item::Water, 1),
+    (Item::Wood, 1),
+    (Item::Clay, 1),
+    (Item::Brick, 1),
+    (Item::Metal, 1),
+    (Item::Glass, 1),
+    (Item::Bullet, 1),
+    (Item::Money, 10),
+];
+const REQUIREMENTS: &[(Item, usize)] = &[
+    (Item::Food, 1),
+    (Item::Water, 1),
+    (Item::Wood, 1),
+    (Item::Clay, 1),
+    (Item::Brick, 1),
+    (Item::Metal, 1),
+    (Item::Glass, 1),
+    (Item::Bullet, 1),
+    (Item::Money, 0),
+];
+
 impl Contract {
     fn generate_random(rng: &mut impl Rng, current_stop_number: usize) -> Self {
-        let variants = [
-            (Item::Food, 1),
-            (Item::Water, 1),
-            (Item::Wood, 1),
-            (Item::Clay, 1),
-            (Item::Brick, 1),
-            (Item::Metal, 1),
-            (Item::Glass, 1),
-            (Item::Bullet, 1),
-            (Item::Money, 1),
-        ];
-        let required = variants
+        let required = REQUIREMENTS
             .choose_weighted(rng, |(_, w)| *w)
             .unwrap()
             .0
             .clone();
-        let reward = variants
-            .choose_weighted(rng, |(_, w)| *w)
-            .unwrap()
-            .0
-            .clone();
+        let reward = REWARDS.choose_weighted(rng, |(_, w)| *w).unwrap().0.clone();
         let required_amount = rng.random_range(15..100);
         let multiplier = ((required_amount as f32) / 10.0).max(1.2).sqrt();
         Contract {
@@ -195,6 +204,24 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
             Visibility::Hidden,
         ))
         .with_children(|parent| {
+            parent
+                .spawn((
+                    Node {
+                        width: Val::Px(160.0),
+                        height: Val::Px(40.0),
+                        ..Default::default()
+                    },
+                    BackgroundColor(Color::WHITE),
+                    children![(Text::new("Buy train car"), TextColor(Color::BLACK))],
+                    Pickable::default(),
+                ))
+                .observe(
+                    |mut trigger: Trigger<Pointer<Pressed>>,
+                     mut train_length: ResMut<TrainLength>| {
+                        println!("221 log thing");
+                        train_length.0 += 1;
+                    },
+                );
             parent
                 .spawn((Node {
                     width: Val::Px(CONTRACT_WIDTH * 6.),

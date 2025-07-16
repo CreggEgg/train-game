@@ -12,6 +12,7 @@ mod control_panel_plugin;
 mod debug_plugin;
 mod goblins;
 mod main_menu;
+mod particles_plugin;
 mod resources_plugin;
 mod train_plugin;
 mod ui_state;
@@ -127,6 +128,7 @@ fn main() {
         build_plugin::build_plugin,
         main_menu::main_menu_plugin,
         resources_plugin::resources_plugin,
+        particles_plugin::particles_plugin,
     ))
     .init_state::<InGameState>()
     .init_state::<GameState>()

@@ -1,7 +1,15 @@
 use core::f32;
 use std::time::Duration;
 
-use bevy::{math::FloatPow, platform::collections::HashMap, prelude::*, window::PrimaryWindow};
+use bevy::{
+    input::mouse::{MouseScrollUnit, MouseWheel},
+    math::FloatPow,
+    picking::hover::HoverMap,
+    platform::collections::HashMap,
+    prelude::*,
+    window::PrimaryWindow,
+    winit::WinitSettings,
+};
 use building_menus::BuildingInspected;
 
 use crate::{
@@ -24,6 +32,11 @@ pub enum BuildingType {
     Housing,
     Farm,
     Storage,
+    Sawmill,
+    AlchemyLab,
+    Cannon,
+    Workshop,
+    Roost,
 }
 
 impl BuildingType {
@@ -37,32 +50,56 @@ impl BuildingType {
     }
     fn get_build_locations(&self) -> Vec<Vec2> {
         match self {
-            BuildingType::Housing => vec![Vec2::new(0., 40.)],
             BuildingType::Farm => vec![],
-            BuildingType::Storage => vec![Vec2::new(0., 40.)],
+            _ => vec![Vec2::new(0., 40.)],
         }
     }
 
     fn iterator() -> impl Iterator<Item = Self> {
-        [Self::Housing, Self::Farm, Self::Storage].into_iter()
+        use BuildingType::*;
+        [
+            Housing, Farm, Storage, Sawmill, AlchemyLab, Cannon, Workshop, Roost,
+        ]
+        .into_iter()
     }
 
     fn name(&self) -> &'static str {
+        use BuildingType::*;
         match self {
-            BuildingType::Housing => "Housing",
-            BuildingType::Farm => "Farm",
-            BuildingType::Storage => "Storage",
+            Housing => "Housing",
+            Farm => "Farm",
+            Storage => "Storage",
+            Sawmill => "Sawmill",
+            AlchemyLab => "Alchemy Lab",
+            Cannon => "Cannon",
+            Workshop => "Workshop",
+            Roost => "Roost",
         }
     }
 
     fn get_resource_production(&self) -> Option<ResourceProduction> {
+        use BuildingType::*;
         match self {
-            BuildingType::Housing => None,
-            BuildingType::Farm => Some(ResourceProduction(
-                Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
-                Item::Food,
-            )),
-            BuildingType::Storage => None,
+            Housing => None,
+            Farm => Some(ResourceProduction {
+                timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                output: (Item::Food, 1),
+                input: None,
+            }),
+            Sawmill => Some(ResourceProduction {
+                timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                output: (Item::Wood, 1),
+                input: None,
+            }),
+            Storage => None,
+            AlchemyLab => Some(ResourceProduction {
+                timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                input: Some((Item::Wood, 5)),
+                output: (Item::Metal, 1),
+            }),
+            Cannon => None,
+            Workshop => None,
+            Roost => None,
         }
     }
 }
@@ -77,7 +114,11 @@ struct GhostBuilding;
 pub struct Building(BuildingType);
 
 #[derive(Component)]
-pub struct ResourceProduction(pub Timer, pub Item);
+pub struct ResourceProduction {
+    pub timer: Timer,
+    pub output: (Item, usize),
+    pub input: Option<(Item, usize)>,
+}
 
 pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
@@ -100,6 +141,11 @@ pub fn build_plugin(app: &mut App) {
                     .and(resource_exists::<BuildingType>)
                     .and(resource_changed::<BuildingType>),
             ),
+        )
+        // .insert_resource(WinitSettings::desktop_app())
+        .add_systems(
+            Update,
+            update_scroll_position.run_if(in_state(InMenu::BuildMenu)),
         )
         .add_systems(
             OnEnter(InMenu::BuildMenu),
@@ -172,14 +218,20 @@ fn spawn_blueprint_window(
             BuildMenuItem,
             Node {
                 top: Val::Vh(5.0),
+                // height: Val::Percent(100.0),
+                bottom: Val::Px(0.0),
                 right: Val::Px(0.),
                 display: Display::Flex,
                 position_type: PositionType::Absolute,
-                justify_content: JustifyContent::End,
-                align_items: AlignItems::FlexEnd,
+                // justify_content: JustifyContent::End,
+                // align_items: AlignItems::FlexEnd,
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(10.0)),
                 margin: UiRect::top(Val::Px(10.0)),
+
+                align_self: AlignSelf::Stretch,
+
+                overflow: Overflow::scroll_y(),
                 ..Default::default()
             },
         ))
@@ -192,6 +244,10 @@ fn spawn_blueprint_window(
                         flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::Center,
                         ..Default::default()
+                    },
+                    Pickable {
+                        should_block_lower: false,
+                        ..default()
                     },
                     children![
                         (
@@ -208,6 +264,10 @@ fn spawn_blueprint_window(
                             },
                             BluePrintButton(building_type),
                             Button,
+                            Pickable {
+                                should_block_lower: false,
+                                ..default()
+                            },
                         ),
                         (
                             Node {
@@ -218,7 +278,17 @@ fn spawn_blueprint_window(
 
                                 ..default()
                             },
-                            children![Text::new(building_type.name()),],
+                            children![(
+                                Text::new(building_type.name()),
+                                Pickable {
+                                    should_block_lower: false,
+                                    ..default()
+                                },
+                            )],
+                            Pickable {
+                                should_block_lower: false,
+                                ..default()
+                            },
                         ),
                     ],
                 ));
@@ -365,14 +435,58 @@ fn produce_resources(
 ) {
     let mut produced_items = HashMap::new();
     for mut building in &mut buildings {
-        if building.0.tick(time.delta()).just_finished() {
-            *produced_items.entry(building.1.clone()).or_insert(0) += 1;
+        if building.timer.tick(time.delta()).just_finished() {
+            if let Some(required) = &building.input {
+                let total_owned = {
+                    let mut total = 0;
+                    for mut inventory in &mut inventories {
+                        total += *inventory.items.entry(required.0.clone()).or_insert(0);
+                    }
+                    total
+                };
+                let required = required.1;
+                if total_owned < required {
+                    info!("Failed to produce output");
+                    continue;
+                }
+            }
+            *produced_items.entry(building.output.0.clone()).or_insert(0) += building.output.1;
         }
     }
     for (item, amount) in produced_items {
         for mut inventory in &mut inventories {
             *inventory.items.entry(item.clone()).or_insert(0) += amount;
             break;
+        }
+    }
+}
+
+/// Updates the scroll position of scrollable nodes in response to mouse input
+pub fn update_scroll_position(
+    mut mouse_wheel_events: EventReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    mut scrolled_node_query: Query<&mut ScrollPosition>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+) {
+    for mouse_wheel_event in mouse_wheel_events.read() {
+        let (mut dx, mut dy) = match mouse_wheel_event.unit {
+            MouseScrollUnit::Line => (mouse_wheel_event.x * 21.0, mouse_wheel_event.y * 21.0),
+            MouseScrollUnit::Pixel => (mouse_wheel_event.x, mouse_wheel_event.y),
+        };
+
+        if keyboard_input.pressed(KeyCode::ControlLeft)
+            || keyboard_input.pressed(KeyCode::ControlRight)
+        {
+            std::mem::swap(&mut dx, &mut dy);
+        }
+
+        for (_pointer, pointer_map) in hover_map.iter() {
+            for (entity, _hit) in pointer_map.iter() {
+                if let Ok(mut scroll_position) = scrolled_node_query.get_mut(*entity) {
+                    scroll_position.offset_x -= dx;
+                    scroll_position.offset_y -= dy;
+                }
+            }
         }
     }
 }

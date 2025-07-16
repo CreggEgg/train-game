@@ -113,8 +113,6 @@ fn update_inspected_building(
         .with_children(|parent| {
             parent.spawn((Text::new(building.0.name()), TextColor::BLACK));
             match building.0 {
-                super::BuildingType::Housing => {}
-                super::BuildingType::Farm => {}
                 super::BuildingType::Storage => {
                     for (item, amount) in &inventory.unwrap().items {
                         // parent.spawn((Text::new(item.name())));
@@ -132,6 +130,7 @@ fn update_inspected_building(
                         ));
                     }
                 }
+                _ => {}
             }
         });
 }

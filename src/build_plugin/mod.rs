@@ -10,10 +10,12 @@ use bevy::{
     window::PrimaryWindow,
     winit::WinitSettings,
 };
+use bird_plane::Roost;
 use building_menus::BuildingInspected;
 
 use crate::{
     GameState, ImageAssets, InGameState,
+    animations::Animation,
     resources_plugin::{Inventory, Item},
     train_plugin::TrainState,
     ui_state::InMenu,
@@ -25,6 +27,7 @@ use crate::{
 //     #[default]
 //     NotBuilding,
 // }
+mod bird_plane;
 mod building_menus;
 
 #[derive(Resource, Clone, Copy)]
@@ -45,6 +48,7 @@ impl BuildingType {
             BuildingType::Housing => image_assets.housing.clone(),
             BuildingType::Farm => image_assets.farm.clone(),
             BuildingType::Storage => image_assets.shipping_container.clone(),
+            BuildingType::AlchemyLab => image_assets.alchemy_lab_1.clone(),
             _ => image_assets.debug_building.clone(),
         }
     }
@@ -124,7 +128,10 @@ pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
         .insert_resource(BuildingType::Farm)
         .add_event::<BuildEvent>()
-        .add_plugins(building_menus::building_menus_plugin)
+        .add_plugins((
+            building_menus::building_menus_plugin,
+            bird_plane::bird_plane_plugin,
+        ))
         .add_systems(
             Update,
             (construct_buildings, change_selected_building).run_if(
@@ -406,6 +413,35 @@ fn on_build(
         match building_type {
             BuildingType::Storage => {
                 building.insert(Inventory::default());
+            }
+            BuildingType::Roost => {
+                building.insert(Roost::default());
+            }
+
+            BuildingType::AlchemyLab => {
+                building.insert(Animation(
+                    vec![
+                        image_assets.alchemy_lab_1.clone(),
+                        image_assets.alchemy_lab_2.clone(),
+                        image_assets.alchemy_lab_3.clone(),
+                        image_assets.alchemy_lab_4.clone(),
+                        image_assets.alchemy_lab_5.clone(),
+                        image_assets.alchemy_lab_6.clone(),
+                        image_assets.alchemy_lab_7.clone(),
+                        image_assets.alchemy_lab_8.clone(),
+                        image_assets.alchemy_lab_9.clone(),
+                        image_assets.alchemy_lab_10.clone(),
+                        image_assets.alchemy_lab_11.clone(),
+                        image_assets.alchemy_lab_12.clone(),
+                        image_assets.alchemy_lab_13.clone(),
+                        image_assets.alchemy_lab_14.clone(),
+                        image_assets.alchemy_lab_15.clone(),
+                        image_assets.alchemy_lab_16.clone(),
+                        image_assets.alchemy_lab_17.clone(),
+                        image_assets.alchemy_lab_18.clone(),
+                    ],
+                    0,
+                ));
             }
             _ => {}
         }

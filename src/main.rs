@@ -6,6 +6,7 @@ use bevy_asset_loader::{
 };
 use ui_state::InMenu;
 
+mod animations;
 mod build_plugin;
 mod camera_plugin;
 mod control_panel_plugin;
@@ -93,6 +94,112 @@ struct ImageAssets {
     signature_12: Handle<Image>,
     #[asset(path = "signature_anim/signature13.png")]
     signature_13: Handle<Image>,
+
+    #[asset(path = "bird_plane_anim/bird_plane_away0001.png")]
+    bird_plane_away_1: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0002.png")]
+    bird_plane_away_2: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0003.png")]
+    bird_plane_away_3: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0004.png")]
+    bird_plane_away_4: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0005.png")]
+    bird_plane_away_5: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0006.png")]
+    bird_plane_away_6: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0007.png")]
+    bird_plane_away_7: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0008.png")]
+    bird_plane_away_8: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0009.png")]
+    bird_plane_away_9: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0010.png")]
+    bird_plane_away_10: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0011.png")]
+    bird_plane_away_11: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0012.png")]
+    bird_plane_away_12: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0013.png")]
+    bird_plane_away_13: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0014.png")]
+    bird_plane_away_14: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0015.png")]
+    bird_plane_away_15: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0016.png")]
+    bird_plane_away_16: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0017.png")]
+    bird_plane_away_17: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0018.png")]
+    bird_plane_away_18: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0019.png")]
+    bird_plane_away_19: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0020.png")]
+    bird_plane_away_20: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0021.png")]
+    bird_plane_away_21: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0022.png")]
+    bird_plane_away_22: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0023.png")]
+    bird_plane_away_23: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0024.png")]
+    bird_plane_away_24: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0025.png")]
+    bird_plane_away_25: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0026.png")]
+    bird_plane_away_26: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0027.png")]
+    bird_plane_away_27: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0028.png")]
+    bird_plane_away_28: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0029.png")]
+    bird_plane_away_29: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0030.png")]
+    bird_plane_away_30: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0031.png")]
+    bird_plane_away_31: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0032.png")]
+    bird_plane_away_32: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0033.png")]
+    bird_plane_away_33: Handle<Image>,
+    #[asset(path = "bird_plane_anim/bird_plane_away0034.png")]
+    bird_plane_away_34: Handle<Image>,
+
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0001.png")]
+    alchemy_lab_1: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0002.png")]
+    alchemy_lab_2: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0003.png")]
+    alchemy_lab_3: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0004.png")]
+    alchemy_lab_4: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0005.png")]
+    alchemy_lab_5: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0006.png")]
+    alchemy_lab_6: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0007.png")]
+    alchemy_lab_7: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0008.png")]
+    alchemy_lab_8: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0009.png")]
+    alchemy_lab_9: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0010.png")]
+    alchemy_lab_10: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0011.png")]
+    alchemy_lab_11: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0012.png")]
+    alchemy_lab_12: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0013.png")]
+    alchemy_lab_13: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0014.png")]
+    alchemy_lab_14: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0015.png")]
+    alchemy_lab_15: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0016.png")]
+    alchemy_lab_16: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0017.png")]
+    alchemy_lab_17: Handle<Image>,
+    #[asset(path = "alchemy_lab_anim/alchemy_lab0018.png")]
+    alchemy_lab_18: Handle<Image>,
 }
 
 #[derive(AssetCollection, Resource)]
@@ -129,6 +236,7 @@ fn main() {
         main_menu::main_menu_plugin,
         resources_plugin::resources_plugin,
         particles_plugin::particles_plugin,
+        animations::animations_plugin,
     ))
     .init_state::<InGameState>()
     .init_state::<GameState>()

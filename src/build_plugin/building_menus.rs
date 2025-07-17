@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 use crate::{FontAssets, GameState, resources_plugin::Inventory, ui_state::InMenu};
 
-use super::Building;
+use super::{
+    Building,
+    bird_plane::{Roost, roost_menu},
+};
 
 pub fn building_menus_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_building_menu)
@@ -94,7 +97,7 @@ fn hide_building_menu(mut menu: Query<&mut Visibility, With<BuildingMenu>>) {
 
 fn update_inspected_building(
     mut inspected_building: ResMut<BuildingInspected>,
-    buildings: Query<(&Building, Option<&Inventory>)>,
+    mut buildings: Query<(Entity, &Building, Option<&Inventory>, Option<&mut Roost>)>,
     building_menu_slot: Single<Entity, With<BuildingMenuSlot>>,
     mut commands: Commands,
     font_assets: Res<FontAssets>,
@@ -102,7 +105,7 @@ fn update_inspected_building(
     let Some(entity) = inspected_building.0 else {
         return;
     };
-    let Ok((building, inventory)) = buildings.get(entity) else {
+    let Ok((building_entity, building, inventory, roost)) = buildings.get_mut(entity) else {
         inspected_building.0 = None;
         return;
     };
@@ -129,6 +132,9 @@ fn update_inspected_building(
                             TextFont::from_font(font_assets.default_font.clone()),
                         ));
                     }
+                }
+                super::BuildingType::Roost => {
+                    roost_menu(parent, &mut roost.unwrap(), building_entity);
                 }
                 _ => {}
             }

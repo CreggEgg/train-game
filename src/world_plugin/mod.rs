@@ -5,10 +5,14 @@ use rand::{
 };
 
 use crate::{
-    resources_plugin::{Inventory, Item}, train_plugin::{Train, TrainLength, TrainState, TrainStats}, ui_state::InMenu, world_plugin::{
-        goblin_spawner::{spawn_goblins, GoblinSpawner, GoblinType},
+    GameState, ImageAssets, InGameState,
+    resources_plugin::{Inventory, Item},
+    train_plugin::{Train, TrainLength, TrainState, TrainStats},
+    ui_state::InMenu,
+    world_plugin::{
+        goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
         progress_bar_plugin::progress_bar_plugin,
-    }, GameState, ImageAssets, InGameState
+    },
 };
 
 mod goblin_spawner;
@@ -260,7 +264,11 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
     let mut minecarts: Vec<Minecart> = Vec::new();
     let minecart_count = rng.random_range(1..=4);
 
-    let minecart_item = MINECART_ITEMS.choose_weighted(rng, |(_, w)| *w).unwrap().0.clone();
+    let minecart_item = MINECART_ITEMS
+        .choose_weighted(rng, |(_, w)| *w)
+        .unwrap()
+        .0
+        .clone();
 
     for _i in 0..minecart_count {
         minecarts.push(Minecart {

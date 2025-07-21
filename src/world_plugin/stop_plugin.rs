@@ -42,8 +42,11 @@ pub fn stop_plugin(app: &mut App) {
         .add_systems(
             Update,
             (
-                show_stop_menu
-                    .run_if(resource_exists::<CurrentStop>.and(resource_changed::<CurrentStop>).and(in_state(GameState::InGame))),
+                show_stop_menu.run_if(
+                    resource_exists::<CurrentStop>
+                        .and(resource_changed::<CurrentStop>)
+                        .and(in_state(GameState::InGame)),
+                ),
                 hide_stop_menu.run_if(
                     in_state(GameState::InGame)
                         .and(in_state(InGameState::Running))
@@ -290,19 +293,17 @@ fn show_stop_menu(
                     &mut world.rng,
                     current_stop.0.clone().map(|it| it.1).unwrap_or(0),
                 );
-                let item_image_required: Handle<Image> =
-                match contract.required.0 {
-                    Item::Metal => { image_assets.item_metal.clone() }
-                    Item::Wood => { image_assets.item_wood.clone() }
-                    _ => { image_assets.item_metal.clone() }
+                let item_image_required: Handle<Image> = match contract.required.0 {
+                    Item::Metal => image_assets.item_metal.clone(),
+                    Item::Wood => image_assets.item_wood.clone(),
+                    _ => image_assets.item_metal.clone(),
                 };
-                let item_image_reward: Handle<Image> =
-                match contract.reward.0 {
-                    Item::Metal => { image_assets.item_metal.clone() }
-                    Item::Wood => { image_assets.item_wood.clone() }
-                    _ => { image_assets.item_metal.clone() }
+                let item_image_reward: Handle<Image> = match contract.reward.0 {
+                    Item::Metal => image_assets.item_metal.clone(),
+                    Item::Wood => image_assets.item_wood.clone(),
+                    _ => image_assets.item_metal.clone(),
                 };
-                
+
                 commands.entity(booth).with_children(|booth| {
                     booth
                         .spawn((
@@ -319,13 +320,11 @@ fn show_stop_menu(
                                 ..Default::default()
                             },
                             children![
-                                (
-                                    Node {
-                                        width: Val::Percent(100.),
-                                        height: Val::Percent(10.),
-                                        ..Default::default()
-                                    },
-                                ),
+                                (Node {
+                                    width: Val::Percent(100.),
+                                    height: Val::Percent(10.),
+                                    ..Default::default()
+                                },),
                                 (
                                     Node {
                                         width: Val::Percent(100.),
@@ -350,10 +349,7 @@ fn show_stop_menu(
                                                 top: Val::Percent(6.),
                                                 ..Default::default()
                                             },
-                                            Text::new(format!(
-                                                "x{}",
-                                                contract.required.1
-                                            )),
+                                            Text::new(format!("x{}", contract.required.1)),
                                             TextColor(Color::BLACK),
                                         )
                                     ]
@@ -383,10 +379,7 @@ fn show_stop_menu(
                                                 top: Val::Percent(6.),
                                                 ..Default::default()
                                             },
-                                            Text::new(format!(
-                                                "x{}",
-                                                contract.reward.1
-                                            )),
+                                            Text::new(format!("x{}", contract.reward.1)),
                                             TextColor(Color::BLACK),
                                         )
                                     ]

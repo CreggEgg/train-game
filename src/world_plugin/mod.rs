@@ -36,8 +36,7 @@ pub struct Minecart {
     resource_type: Item,
     resource_amount: usize,
     clicked: bool,
-    offset_x: i32,
-    offset_y: i32,
+    offset: Vec3,
 }
 
 #[derive(Clone)]
@@ -86,13 +85,14 @@ impl Stop {
                         let minecart_image: Handle<Image> =
                         match minecart.resource_type {
                             Item::Metal => { image_assets.minecart_metal.clone() }
+                            Item::Wood => { image_assets.minecart_wood.clone() }
                             _ => { image_assets.minecart_empty.clone() }
                         };
-                        
+
                         parent
                             .spawn((
                                 Sprite::from_image(minecart_image.clone()),
-                                Transform::from_xyz(minecart.offset_x as f32 * 70.0, 150. + minecart.offset_y as f32 * 40.0, -20.0),
+                                Transform::from_xyz(minecart.offset.x, minecart.offset.y, minecart.offset.z),
                                 WorldClickable,
                                 minecart.clone(),
                             ))
@@ -254,10 +254,10 @@ fn generate_waves(rng: &mut impl Rng) -> Vec<Vec<GoblinType>> {
 }
 
 const MINECART_ITEMS: &[(Item, usize)] = &[
-    (Item::Wood, 1),
+    (Item::Wood, 10),
     (Item::Clay, 1),
     (Item::Brick, 1),
-    (Item::Metal, 10),
+    (Item::Metal, 1),
 ];
 
 fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
@@ -270,13 +270,16 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
         .0
         .clone();
 
-    for _i in 0..minecart_count {
+    let minecart_offsets: Vec<Vec3> = vec![vec3(0., 135., -20.), vec3(-65., 185., -21.), vec3(155., 195., -21.), vec3(-120., 150., -20.),
+    vec3(-155., 195., -21.), vec3(65., 185., -21.), vec3(120., 150., -20.)];
+    let vector_offset: usize = rng.random_range(0..=minecart_offsets.len());
+
+    for i in 0..minecart_count {
         minecarts.push(Minecart {
             resource_type: minecart_item.clone(),
             resource_amount: rng.random_range(45..=75),
             clicked: false,
-            offset_x: rng.random_range(-2..=2),
-            offset_y: rng.random_range(0..=1),
+            offset: minecart_offsets[(i + vector_offset) % minecart_offsets.len()],
         });
     }
     minecarts

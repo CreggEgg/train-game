@@ -147,12 +147,15 @@ fn spawn_town_arrival_text(
         return;
     }
     println!("arriving at town: {}", town_name);
+    let display_text: String = "Welcome To ".to_string() + &town_name;
+    println!("{}", display_text.len());
+    let text_size: f32 = (100.0 - (1.25 * display_text.len() as f32)).clamp(20., 80.);
 
     commands.spawn((
-        Text::new("Welcome To ".to_string() + &town_name),
+        Text::new(display_text),
         TextFont {
             font: font_assets.town_title_font.clone().into(),
-            font_size: 90.0,
+            font_size: text_size,
             ..Default::default()
         },
         Node {

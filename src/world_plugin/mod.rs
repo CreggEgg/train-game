@@ -270,7 +270,7 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
         .0
         .clone();
 
-    let minecart_offsets: Vec<Vec3> = vec![
+    let mut minecart_offsets: Vec<Vec3> = vec![
         vec3(0., 135., -20.),
         vec3(-65., 185., -21.),
         vec3(155., 195., -21.),
@@ -279,15 +279,16 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
         vec3(65., 185., -21.),
         vec3(120., 150., -20.),
     ];
-    let vector_offset: usize = rng.random_range(0..=minecart_offsets.len());
 
-    for i in 0..minecart_count {
+    for _i in 0..minecart_count {
+        let chosen_pos = rng.random_range(0..=minecart_offsets.len());
         minecarts.push(Minecart {
             resource_type: minecart_item.clone(),
             resource_amount: rng.random_range(45..=75),
             clicked: false,
-            offset: minecart_offsets[(i + vector_offset) % minecart_offsets.len()],
+            offset: minecart_offsets[chosen_pos],
         });
+        minecart_offsets.swap_remove(chosen_pos);
     }
     minecarts
 }

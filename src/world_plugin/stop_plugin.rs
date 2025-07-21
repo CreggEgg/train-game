@@ -502,6 +502,7 @@ fn evaluate_contracts(
                 .items
                 .entry(contract.reward.0.clone())
                 .or_insert(0) += contract.reward.1;
+            break;
         }
         info!("Succeeded contract");
     }

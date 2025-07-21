@@ -71,8 +71,10 @@ struct ImageAssets {
     #[asset(path = "map_pin.png")]
     map_pin: Handle<Image>,
 
-    #[asset(path = "minecarts/Empty.png")]
+    #[asset(path = "minecarts/empty.png")]
     minecart_empty: Handle<Image>,
+    #[asset(path = "minecarts/metal.png")]
+    minecart_metal: Handle<Image>,
 
     #[asset(path = "signature_anim/signature1.png")]
     signature_1: Handle<Image>,

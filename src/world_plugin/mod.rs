@@ -83,18 +83,18 @@ impl Stop {
                 ))
                 .with_children(|parent| {
                     for minecart in minecarts.iter().into_iter() {
+                        let minecart_image: Handle<Image> =
+                        match minecart.resource_type {
+                            Item::Metal => { image_assets.minecart_metal.clone() }
+                            _ => { image_assets.minecart_empty.clone() }
+                        };
+                        
                         parent
                             .spawn((
-                                Sprite::from_image(image_assets.train_caboose.clone()),
+                                Sprite::from_image(minecart_image.clone()),
                                 Transform::from_xyz(minecart.offset_x as f32 * 70.0, 150. + minecart.offset_y as f32 * 40.0, -20.0),
                                 WorldClickable,
-                                Minecart {
-                                    resource_type: minecart.resource_type.clone(),
-                                    resource_amount: minecart.resource_amount,
-                                    clicked: minecart.clicked,
-                                    offset_x: minecart.offset_x,
-                                    offset_y: minecart.offset_y,
-                                },
+                                minecart.clone(),
                             ))
                             .observe(
                                 |mut trigger: Trigger<Pointer<Pressed>>,
@@ -103,19 +103,19 @@ impl Stop {
                                  mut minecart_query: Query<(Entity, &mut Minecart, &mut Sprite)>,
                                  image_assets: Res<ImageAssets>,
                                  mut inventories: Query<&mut Inventory>, | {
-                                    minecart_query.iter_mut().for_each(|(entity, mut minecart, mut sprite)| {
+                                    for (entity, mut minecart, mut sprite) in &mut minecart_query {
                                         if entity == trigger.target && !minecart.clicked {
-                                            println!("Clicked Minecart");
                                             minecart.clicked = true;
                                             for mut inventory in &mut inventories {
                                                 *inventory
                                                     .items
                                                     .entry(minecart.resource_type.clone())
                                                     .or_insert(0) += minecart.resource_amount;
+                                                break;
                                             }
                                             sprite.image = image_assets.minecart_empty.clone();
                                         }
-                                    });
+                                    }
                                 },
                             );
                     }
@@ -257,12 +257,12 @@ const MINECART_ITEMS: &[(Item, usize)] = &[
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),
-    (Item::Metal, 1),
+    (Item::Metal, 10),
 ];
 
 fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
     let mut minecarts: Vec<Minecart> = Vec::new();
-    let minecart_count = rng.random_range(1..=4);
+    let minecart_count = rng.random_range(2..=5);
 
     let minecart_item = MINECART_ITEMS
         .choose_weighted(rng, |(_, w)| *w)

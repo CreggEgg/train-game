@@ -71,6 +71,11 @@ struct ImageAssets {
     #[asset(path = "map_pin.png")]
     map_pin: Handle<Image>,
 
+    #[asset(path = "items/metal.png")]
+    item_metal: Handle<Image>,
+    #[asset(path = "items/wood.png")]
+    item_wood: Handle<Image>,
+
     #[asset(path = "minecarts/empty.png")]
     minecart_empty: Handle<Image>,
     #[asset(path = "minecarts/metal.png")]

@@ -43,7 +43,7 @@ pub fn stop_plugin(app: &mut App) {
             Update,
             (
                 show_stop_menu
-                    .run_if(resource_exists::<CurrentStop>.and(resource_changed::<CurrentStop>)),
+                    .run_if(resource_exists::<CurrentStop>.and(resource_changed::<CurrentStop>).and(in_state(GameState::InGame))),
                 hide_stop_menu.run_if(
                     in_state(GameState::InGame)
                         .and(in_state(InGameState::Running))
@@ -90,7 +90,7 @@ const REQUIREMENTS: &[(Item, usize)] = &[
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),
-    (Item::Metal, 1),
+    (Item::Metal, 10),
     (Item::Glass, 1),
     (Item::Bullet, 1),
     (Item::Money, 0),
@@ -271,6 +271,7 @@ fn show_stop_menu(
     contracts: Query<Entity, With<ContractImage>>,
     mut world: ResMut<GameWorld>,
     contract_displays: Query<Entity, With<ContractDisplay>>,
+    image_assets: Res<ImageAssets>,
 ) {
     if let Some(NumberedStop(Stop::Town, current_stop_number)) = current_stop.0 {
         if let Ok(mut menu) = menu.single_mut() {
@@ -289,6 +290,19 @@ fn show_stop_menu(
                     &mut world.rng,
                     current_stop.0.clone().map(|it| it.1).unwrap_or(0),
                 );
+                let item_image_required: Handle<Image> =
+                match contract.required.0 {
+                    Item::Metal => { image_assets.item_metal.clone() }
+                    Item::Wood => { image_assets.item_wood.clone() }
+                    _ => { image_assets.item_metal.clone() }
+                };
+                let item_image_reward: Handle<Image> =
+                match contract.reward.0 {
+                    Item::Metal => { image_assets.item_metal.clone() }
+                    Item::Wood => { image_assets.item_wood.clone() }
+                    _ => { image_assets.item_metal.clone() }
+                };
+                
                 commands.entity(booth).with_children(|booth| {
                     booth
                         .spawn((
@@ -306,21 +320,76 @@ fn show_stop_menu(
                             },
                             children![
                                 (
-                                    Text::new(format!(
-                                        "{}x{}",
-                                        contract.required.0.name(),
-                                        contract.required.1
-                                    )),
-                                    TextColor(Color::BLACK)
+                                    Node {
+                                        width: Val::Percent(100.),
+                                        height: Val::Percent(10.),
+                                        ..Default::default()
+                                    },
+                                ),
+                                (
+                                    Node {
+                                        width: Val::Percent(100.),
+                                        height: Val::Px(30.),
+                                        flex_direction: FlexDirection::Row,
+                                        ..Default::default()
+                                    },
+                                    children![
+                                        (
+                                            ImageNode::new(item_image_required.clone()),
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: Val::Percent(29.),
+                                                top: Val::Percent(-24.),
+                                                ..Default::default()
+                                            }
+                                        ),
+                                        (
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: Val::Percent(52.),
+                                                top: Val::Percent(6.),
+                                                ..Default::default()
+                                            },
+                                            Text::new(format!(
+                                                "x{}",
+                                                contract.required.1
+                                            )),
+                                            TextColor(Color::BLACK),
+                                        )
+                                    ]
                                 ),
                                 (Text::new("for"), TextColor(Color::BLACK)),
                                 (
-                                    Text::new(format!(
-                                        "{}x{}",
-                                        contract.reward.0.name(),
-                                        contract.reward.1
-                                    )),
-                                    TextColor(Color::BLACK)
+                                    Node {
+                                        width: Val::Percent(100.),
+                                        height: Val::Px(30.),
+                                        flex_direction: FlexDirection::Row,
+                                        ..Default::default()
+                                    },
+                                    children![
+                                        (
+                                            ImageNode::new(item_image_required.clone()),
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: Val::Percent(29.),
+                                                top: Val::Percent(-24.),
+                                                ..Default::default()
+                                            }
+                                        ),
+                                        (
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                left: Val::Percent(52.),
+                                                top: Val::Percent(6.),
+                                                ..Default::default()
+                                            },
+                                            Text::new(format!(
+                                                "x{}",
+                                                contract.required.1
+                                            )),
+                                            TextColor(Color::BLACK),
+                                        )
+                                    ]
                                 ),
                                 (
                                     Text::new(format!(
@@ -332,7 +401,7 @@ fn show_stop_menu(
                                 (
                                     Node {
                                         position_type: PositionType::Absolute,
-                                        bottom: Val::Percent(30.0),
+                                        bottom: Val::Percent(22.0),
                                         left: Val::Percent(21.),
                                         ..Default::default()
                                     },
@@ -347,7 +416,7 @@ fn show_stop_menu(
                                 .spawn((
                                     Node {
                                         width: Val::Percent(100.0),
-                                        height: Val::Percent(30.0),
+                                        height: Val::Percent(22.0),
                                         display: Display::Flex,
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
@@ -378,7 +447,7 @@ fn show_stop_menu(
                                                     position_type: PositionType::Absolute,
                                                     width: Val::Px(300. * 0.5),
                                                     height: Val::Px(167. * 0.5),
-                                                    bottom: Val::Px(86.),
+                                                    bottom: Val::Px(63.),
                                                     left: Val::Px(1.),
                                                     ..Default::default()
                                                 },

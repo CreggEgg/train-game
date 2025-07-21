@@ -24,7 +24,7 @@ impl Item {
             Item::Brick => "Brick",
             Item::Metal => "Metal",
             Item::Glass => "Glass",
-            Item::Bullet => "Bullet",
+            Item::Bullet => "Bullets",
             Item::Money => "Money",
         }
     }

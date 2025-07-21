@@ -161,7 +161,7 @@ impl Stop {
                 &mut |rng| Stop::Mine {
                     minecarts: generate_minecarts(rng),
                 },
-                7,
+                2,
             ),
             (
                 &mut |rng| Stop::GoblinAttack {

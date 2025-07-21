@@ -368,7 +368,7 @@ fn show_stop_menu(
                                     },
                                     children![
                                         (
-                                            ImageNode::new(item_image_required.clone()),
+                                            ImageNode::new(item_image_reward.clone()),
                                             Node {
                                                 position_type: PositionType::Absolute,
                                                 left: Val::Percent(29.),
@@ -385,7 +385,7 @@ fn show_stop_menu(
                                             },
                                             Text::new(format!(
                                                 "x{}",
-                                                contract.required.1
+                                                contract.reward.1
                                             )),
                                             TextColor(Color::BLACK),
                                         )

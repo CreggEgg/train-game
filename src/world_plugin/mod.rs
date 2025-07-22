@@ -266,12 +266,6 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
     let mut minecarts: Vec<Minecart> = Vec::new();
     let minecart_count = rng.random_range(2..=5);
 
-    let minecart_item = MINECART_ITEMS
-        .choose_weighted(rng, |(_, w)| *w)
-        .unwrap()
-        .0
-        .clone();
-
     let mut minecart_offsets: Vec<Vec3> = vec![
         vec3(0., 135., -20.),
         vec3(-65., 185., -21.),
@@ -283,7 +277,13 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
     ];
 
     for _i in 0..minecart_count {
-        let chosen_pos = rng.random_range(0..=minecart_offsets.len());
+        let minecart_item = MINECART_ITEMS
+            .choose_weighted(rng, |(_, w)| *w)
+            .unwrap()
+            .0
+            .clone();
+
+        let chosen_pos = rng.random_range(0..minecart_offsets.len());
         minecarts.push(Minecart {
             resource_type: minecart_item.clone(),
             resource_amount: rng.random_range(45..=75),

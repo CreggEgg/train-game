@@ -86,6 +86,7 @@ impl Stop {
                         match minecart.resource_type {
                             Item::Metal => { image_assets.minecart_metal.clone() }
                             Item::Wood => { image_assets.minecart_wood.clone() }
+                            Item::Stone => { image_assets.minecart_stone.clone() }
                             _ => { image_assets.minecart_empty.clone() }
                         };
 
@@ -254,10 +255,11 @@ fn generate_waves(rng: &mut impl Rng) -> Vec<Vec<GoblinType>> {
 }
 
 const MINECART_ITEMS: &[(Item, usize)] = &[
-    (Item::Wood, 10),
-    (Item::Clay, 1),
+    (Item::Wood, 1),
+    (Item::Clay, 2),
     (Item::Brick, 1),
-    (Item::Metal, 1),
+    (Item::Stone, 3),
+    (Item::Metal, 2),
 ];
 
 fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {

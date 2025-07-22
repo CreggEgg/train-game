@@ -90,6 +90,7 @@ const REWARDS: &[(Item, usize)] = &[
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),
+    (Item::Stone, 1),
     (Item::Metal, 1),
     (Item::Glass, 1),
     (Item::Bullet, 1),
@@ -101,7 +102,8 @@ const REQUIREMENTS: &[(Item, usize)] = &[
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),
-    (Item::Metal, 10),
+    (Item::Stone, 1),
+    (Item::Metal, 1),
     (Item::Glass, 1),
     (Item::Bullet, 1),
     (Item::Money, 0),
@@ -363,11 +365,13 @@ fn show_stop_menu(
                 let item_image_required: Handle<Image> = match contract.required.0 {
                     Item::Metal => image_assets.item_metal.clone(),
                     Item::Wood => image_assets.item_wood.clone(),
+                    Item::Stone => image_assets.item_stone.clone(),
                     _ => image_assets.item_metal.clone(),
                 };
                 let item_image_reward: Handle<Image> = match contract.reward.0 {
                     Item::Metal => image_assets.item_metal.clone(),
                     Item::Wood => image_assets.item_wood.clone(),
+                    Item::Stone => image_assets.item_stone.clone(),
                     _ => image_assets.item_metal.clone(),
                 };
 

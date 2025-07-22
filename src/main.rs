@@ -50,6 +50,8 @@ struct ImageAssets {
     goblin_stop_bg: Handle<Image>,
     #[asset(path = "goblinstop_fg.png")]
     goblin_stop_fg: Handle<Image>,
+    #[asset(path = "mine_stop.png")]
+    mine_stop: Handle<Image>,
     #[asset(path = "farm.png")]
     farm: Handle<Image>,
     #[asset(path = "rail.png")]
@@ -72,6 +74,18 @@ struct ImageAssets {
     workshop: Handle<Image>,
     #[asset(path = "Roost.png")]
     roost: Handle<Image>,
+
+    #[asset(path = "items/metal.png")]
+    item_metal: Handle<Image>,
+    #[asset(path = "items/wood.png")]
+    item_wood: Handle<Image>,
+
+    #[asset(path = "minecarts/empty.png")]
+    minecart_empty: Handle<Image>,
+    #[asset(path = "minecarts/metal.png")]
+    minecart_metal: Handle<Image>,
+    #[asset(path = "minecarts/wood.png")]
+    minecart_wood: Handle<Image>,
 
     #[asset(path = "signature_anim/signature1.png")]
     signature_1: Handle<Image>,

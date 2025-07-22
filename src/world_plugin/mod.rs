@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::query, prelude::*};
 use rand::{
     Rng, SeedableRng,
     seq::{IndexedMutRandom, IndexedRandom},
@@ -6,6 +6,7 @@ use rand::{
 
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject,
+    resources_plugin::{Inventory, Item},
     train_plugin::{Train, TrainLength, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{
@@ -25,8 +26,17 @@ pub struct WorldClickable;
 #[derive(Clone)]
 pub enum Stop {
     Town,
+    Mine { minecarts: Vec<Minecart> },
     GoblinAttack { waves: Vec<Vec<GoblinType>> },
     Initial,
+}
+
+#[derive(Component, Clone)]
+pub struct Minecart {
+    resource_type: Item,
+    resource_amount: usize,
+    clicked: bool,
+    offset: Vec3,
 }
 
 #[derive(Clone)]
@@ -64,6 +74,57 @@ impl Stop {
                         ));
                     });
             }
+            Stop::Mine { minecarts } => {
+                commands.spawn((
+                    NextStopImage,
+                    Transform::from_xyz(-distance * METERS_PER_UNIT, 0., -10.),
+                    WorldObject(distance),
+                ))
+                .with_children(|parent| {
+                    for minecart in minecarts.iter().into_iter() {
+                        let minecart_image: Handle<Image> =
+                        match minecart.resource_type {
+                            Item::Metal => { image_assets.minecart_metal.clone() }
+                            Item::Wood => { image_assets.minecart_wood.clone() }
+                            _ => { image_assets.minecart_empty.clone() }
+                        };
+
+                        parent
+                            .spawn((
+                                Sprite::from_image(minecart_image.clone()),
+                                Transform::from_xyz(minecart.offset.x, minecart.offset.y, minecart.offset.z),
+                                WorldClickable,
+                                minecart.clone(),
+                            ))
+                            .observe(
+                                |mut trigger: Trigger<Pointer<Pressed>>,
+                                train_state: Res<State<TrainState>>,
+                                 menu_state: Res<State<InMenu>>, mut next_state: ResMut<NextState<InMenu>>,
+                                 mut minecart_query: Query<(Entity, &mut Minecart, &mut Sprite)>,
+                                 image_assets: Res<ImageAssets>,
+                                 mut inventories: Query<&mut Inventory>, | {
+                                    for (entity, mut minecart, mut sprite) in &mut minecart_query {
+                                        if entity == trigger.target && !minecart.clicked {
+                                            minecart.clicked = true;
+                                            for mut inventory in &mut inventories {
+                                                *inventory
+                                                    .items
+                                                    .entry(minecart.resource_type.clone())
+                                                    .or_insert(0) += minecart.resource_amount;
+                                                break;
+                                            }
+                                            sprite.image = image_assets.minecart_empty.clone();
+                                        }
+                                    }
+                                },
+                            );
+                    }
+                    parent.spawn((
+                        Sprite::from_image(image_assets.mine_stop.clone()),
+                        Transform::from_xyz(0., 130., -25.0),
+                    ));
+                    });
+            }
             Stop::Initial => {}
             Stop::GoblinAttack { waves } => {
                 commands.spawn((
@@ -88,13 +149,20 @@ impl Stop {
     fn generate_name(&self, rng: &mut impl Rng) -> String {
         match self {
             Stop::Town | Self::Initial => generate_town_name(rng),
+            Stop::Mine { minecarts } => generate_mine_name(rng),
             Stop::GoblinAttack { waves } => "Goblin Ambush".into(),
         }
     }
 
     fn generate_random<R: Rng>(rng: &mut R, current_stop: &CurrentStop) -> Self {
-        let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 2] = [
+        let mut stops: [(&mut dyn FnMut(&mut R) -> Stop, u32); 3] = [
             (&mut |_| Stop::Town, 3),
+            (
+                &mut |rng| Stop::Mine {
+                    minecarts: generate_minecarts(rng),
+                },
+                2,
+            ),
             (
                 &mut |rng| Stop::GoblinAttack {
                     waves: generate_waves(rng),
@@ -144,10 +212,32 @@ const SECOND_HALVES: &[&'static str] = &[
     "sylvania",
 ];
 
+const THIRD_HALVES: &[&'static str] = &[
+    " Mines",
+    " Quarry",
+    " Cave",
+    " Mineshaft",
+    " Pit",
+    " Dig",
+    " Burrow",
+    " Cavern",
+    " Chamber",
+    " Deposit",
+    " Lode",
+];
+
 fn generate_town_name(rng: &mut impl Rng) -> String {
     let mut out = String::new();
     out.push_str(FIRST_HALVES.choose(rng).unwrap());
     out.push_str(SECOND_HALVES.choose(rng).unwrap());
+    out
+}
+
+fn generate_mine_name(rng: &mut impl Rng) -> String {
+    let mut out = String::new();
+    out.push_str(FIRST_HALVES.choose(rng).unwrap());
+    out.push_str(SECOND_HALVES.choose(rng).unwrap());
+    out.push_str(THIRD_HALVES.choose(rng).unwrap());
     out
 }
 
@@ -161,6 +251,46 @@ fn generate_waves(rng: &mut impl Rng) -> Vec<Vec<GoblinType>> {
             (0..num).map(|_| GoblinType::Basic).collect::<Vec<_>>()
         })
         .collect::<Vec<_>>()
+}
+
+const MINECART_ITEMS: &[(Item, usize)] = &[
+    (Item::Wood, 10),
+    (Item::Clay, 1),
+    (Item::Brick, 1),
+    (Item::Metal, 1),
+];
+
+fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
+    let mut minecarts: Vec<Minecart> = Vec::new();
+    let minecart_count = rng.random_range(2..=5);
+
+    let minecart_item = MINECART_ITEMS
+        .choose_weighted(rng, |(_, w)| *w)
+        .unwrap()
+        .0
+        .clone();
+
+    let mut minecart_offsets: Vec<Vec3> = vec![
+        vec3(0., 135., -20.),
+        vec3(-65., 185., -21.),
+        vec3(155., 195., -21.),
+        vec3(-120., 150., -20.),
+        vec3(-155., 195., -21.),
+        vec3(65., 185., -21.),
+        vec3(120., 150., -20.),
+    ];
+
+    for _i in 0..minecart_count {
+        let chosen_pos = rng.random_range(0..=minecart_offsets.len());
+        minecarts.push(Minecart {
+            resource_type: minecart_item.clone(),
+            resource_amount: rng.random_range(45..=75),
+            clicked: false,
+            offset: minecart_offsets[chosen_pos],
+        });
+        minecart_offsets.swap_remove(chosen_pos);
+    }
+    minecarts
 }
 
 #[derive(Resource)]

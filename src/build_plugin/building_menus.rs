@@ -1,14 +1,19 @@
 use bevy::prelude::*;
 
-use crate::{FontAssets, GameState, resources_plugin::Inventory, ui_state::InMenu};
+use crate::{FontAssets, GameState, MainGameObject, resources_plugin::Inventory, ui_state::InMenu};
 
 use super::{
     Building,
     bird_plane::{Roost, roost_menu},
 };
 
+fn reset_resources(mut inspected_building: ResMut<BuildingInspected>) {
+    *inspected_building = BuildingInspected(None);
+}
+
 pub fn building_menus_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_building_menu)
+        .add_systems(OnEnter(GameState::MainMenu), reset_resources)
         .add_systems(OnEnter(InMenu::BuildingMenu), show_building_menu)
         .add_systems(OnExit(InMenu::BuildingMenu), hide_building_menu)
         .add_systems(
@@ -38,6 +43,7 @@ struct BuildingMenuSlot;
 fn spawn_building_menu(mut commands: Commands) {
     commands
         .spawn((
+            MainGameObject,
             Node {
                 width: Val::Vw(60.0),
                 height: Val::Vh(60.0),

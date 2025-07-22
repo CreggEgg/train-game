@@ -14,7 +14,7 @@ use bird_plane::Roost;
 use building_menus::BuildingInspected;
 
 use crate::{
-    GameState, ImageAssets, InGameState,
+    GameState, ImageAssets, InGameState, MainGameObject,
     animations::Animation,
     resources_plugin::{Inventory, Item},
     train_plugin::TrainState,
@@ -49,13 +49,17 @@ impl BuildingType {
             BuildingType::Farm => image_assets.farm.clone(),
             BuildingType::Storage => image_assets.shipping_container.clone(),
             BuildingType::AlchemyLab => image_assets.alchemy_lab_1.clone(),
+            BuildingType::Workshop => image_assets.workshop.clone(),
+            BuildingType::Roost => image_assets.roost.clone(),
             _ => image_assets.debug_building.clone(),
         }
     }
     fn get_build_locations(&self) -> Vec<Vec2> {
         match self {
             BuildingType::Farm => vec![],
-            _ => vec![Vec2::new(0., 40.)],
+            BuildingType::Workshop => vec![],
+            BuildingType::Roost => vec![],
+            _ => vec![Vec2::new(0., 45.)],
         }
     }
 
@@ -124,6 +128,10 @@ pub struct ResourceProduction {
     pub input: Option<(Item, usize)>,
 }
 
+fn reset_resources(mut building_type: ResMut<BuildingType>) {
+    *building_type = BuildingType::Farm;
+}
+
 pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
         .insert_resource(BuildingType::Farm)
@@ -132,6 +140,7 @@ pub fn build_plugin(app: &mut App) {
             building_menus::building_menus_plugin,
             bird_plane::bird_plane_plugin,
         ))
+        .add_systems(OnEnter(GameState::MainMenu), reset_resources)
         .add_systems(
             Update,
             (construct_buildings, change_selected_building).run_if(
@@ -190,6 +199,7 @@ struct BuildMenuItem;
 
 fn spawn_ghost(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn((
+        MainGameObject,
         Visibility::Hidden,
         BuildMenuItem,
         GhostBuilding,
@@ -221,6 +231,7 @@ fn spawn_blueprint_window(
     let texture_atlas = TextureAtlas::from(texture_atlas_handle);
     commands
         .spawn((
+            MainGameObject,
             Visibility::Hidden,
             BuildMenuItem,
             Node {
@@ -395,6 +406,7 @@ fn on_build(
     {
         let parent = parents.get(*child_of).unwrap();
         let mut building = commands.spawn((
+            MainGameObject,
             Sprite::from_image(building_type.get_texture(&image_assets)),
             Transform::from_translation(offset.extend(4.0)),
             Building(*building_type),

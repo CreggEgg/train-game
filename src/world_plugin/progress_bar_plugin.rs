@@ -4,11 +4,20 @@ use bevy::{ecs::entity, prelude::*, render::view::visibility};
 use lerp;
 
 use crate::{
-    GameState, ImageAssets, InGameState,
+    GameState, ImageAssets, InGameState, MainGameObject,
     train_plugin::{Train, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{self, CurrentStop, NextStop, NumberedStop, Stop},
 };
+
+fn reset_resources(mut anim_timer: ResMut<AnimTimer>, mut last_stop_dist: ResMut<LastStopDist>) {
+    *anim_timer = AnimTimer {
+        time: 20.,
+        right_slide_amount: 0.,
+        swapped: false,
+    };
+    *last_stop_dist = LastStopDist(0.);
+}
 
 pub fn progress_bar_plugin(app: &mut App) {
     app.insert_resource(AnimTimer {
@@ -18,6 +27,7 @@ pub fn progress_bar_plugin(app: &mut App) {
     })
     .insert_resource(LastStopDist(0.))
     .add_systems(OnEnter(GameState::InGame), spawn_progress_bar)
+    .add_systems(OnEnter(GameState::MainMenu), reset_resources)
     .add_systems(
         Update,
         (
@@ -56,6 +66,7 @@ struct LastStopDist(f32);
 
 fn spawn_progress_bar(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands.spawn((
+        MainGameObject,
         Node {
             width: Val::Vw(60.0),
             height: Val::Vh(2.),

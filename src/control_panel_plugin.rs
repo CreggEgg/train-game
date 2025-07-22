@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    GameState, InGameState,
+    GameState, InGameState, MainGameObject,
     train_plugin::{AdvanceEvent, Train},
     ui_state::InMenu,
     world_plugin::NextStop,
@@ -59,6 +59,7 @@ enum BuildButton {
 
 fn spawn_control_panel(mut commands: Commands) {
     commands.spawn((
+        MainGameObject,
         Node {
             width: Val::Vw(100.0),
             height: Val::Vh(5.0),

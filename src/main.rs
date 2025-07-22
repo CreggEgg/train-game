@@ -68,6 +68,11 @@ struct ImageAssets {
     ground: Handle<Image>,
     #[asset(path = "map_pin.png")]
     map_pin: Handle<Image>,
+    #[asset(path = "workshop.png")]
+    workshop: Handle<Image>,
+    #[asset(path = "Roost.png")]
+    roost: Handle<Image>,
+
     #[asset(path = "signature_anim/signature1.png")]
     signature_1: Handle<Image>,
     #[asset(path = "signature_anim/signature2.png")]
@@ -210,6 +215,19 @@ struct FontAssets {
     default_font: Handle<Font>,
 }
 
+#[derive(Component)]
+struct MainGameObject;
+
+fn reset_states(
+    mut in_game_state: ResMut<NextState<InGameState>>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut menu_state: ResMut<NextState<InMenu>>,
+) {
+    in_game_state.set(InGameState::Running);
+    game_state.set(GameState::MainMenu);
+    menu_state.set(InMenu::None);
+}
+
 fn main() {
     let mut app = App::new();
     app.add_plugins(
@@ -246,7 +264,8 @@ fn main() {
             .continue_to_state(GameState::InGame)
             .load_collection::<ImageAssets>()
             .load_collection::<FontAssets>(),
-    );
+    )
+    .add_systems(OnEnter(GameState::MainMenu), reset_states);
     #[cfg(debug_assertions)]
     app.add_plugins(debug_plugin::debug_plugin);
     app.run();

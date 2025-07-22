@@ -14,19 +14,27 @@ use bevy::{
 use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
-    FontAssets, GameState, ImageAssets, InGameState,
+    FontAssets, GameState, ImageAssets, InGameState, MainGameObject,
     control_panel_plugin::AdvanceBlocker,
     resources_plugin::{Inventory, Item},
-    train_plugin::{TrainLength, TrainState, TrainStats},
+    train_plugin::{TrainFuel, TrainLength, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{self, NextStop},
 };
 
 use super::{CurrentStop, GameWorld, NumberedStop, Stop};
+
+fn reset_resources(mut active_contracts: ResMut<ActiveContracts>, mut fade_time: ResMut<FadeTime>) {
+    *active_contracts = ActiveContracts(Vec::new());
+    *fade_time = FadeTime { time: 0. };
+}
+
 pub fn stop_plugin(app: &mut App) {
     app.add_systems(OnEnter(GameState::InGame), spawn_stop_menu)
+        .add_event::<PurchaseEvent>()
         .insert_resource(ActiveContracts(Vec::new()))
         .insert_resource(FadeTime { time: 0. })
+        .add_systems(OnEnter(GameState::MainMenu), reset_resources)
         .add_systems(
             OnEnter(InMenu::StopMenu),
             |mut menu: Single<&mut Visibility, With<StopMenu>>| {
@@ -146,6 +154,7 @@ fn spawn_town_arrival_text(
     println!("arriving at town: {}", town_name);
 
     commands.spawn((
+        MainGameObject,
         Text::new("Welcome To ".to_string() + &town_name),
         TextFont {
             font: font_assets.town_title_font.clone().into(),
@@ -190,9 +199,16 @@ struct ContractImage;
 const CONTRACT_RATIO: f32 = 149.0 / 99.0;
 const CONTRACT_WIDTH: f32 = 200.0;
 
+#[derive(Event)]
+enum PurchaseEvent {
+    SuccessfulPurchase,
+    FailedPurchase,
+}
+
 fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
     commands
         .spawn((
+            MainGameObject,
             Node {
                 margin: UiRect::AUTO,
                 display: Display::Flex,
@@ -207,19 +223,67 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
             parent
                 .spawn((
                     Node {
-                        width: Val::Px(160.0),
+                        // width: Val::Px(160.0),
                         height: Val::Px(40.0),
                         ..Default::default()
                     },
                     BackgroundColor(Color::WHITE),
-                    children![(Text::new("Buy train car"), TextColor(Color::BLACK))],
+                    children![(Text::new("Buy train car $1000"), TextColor(Color::BLACK))],
                     Pickable::default(),
                 ))
                 .observe(
                     |mut trigger: Trigger<Pointer<Pressed>>,
-                     mut train_length: ResMut<TrainLength>| {
-                        println!("221 log thing");
+                     mut train_length: ResMut<TrainLength>,
+                     mut inventories: Query<&mut Inventory>,
+                     mut ev: EventWriter<PurchaseEvent>| {
+                        let cost = 1000;
+
+                        let total_owned = {
+                            let mut total = 0;
+                            for mut inventory in &mut inventories {
+                                total += *inventory.items.entry(Item::Money).or_insert(0);
+                            }
+                            total
+                        };
+                        if total_owned < cost {
+                            ev.write(PurchaseEvent::FailedPurchase);
+                            return;
+                        }
                         train_length.0 += 1;
+                        ev.write(PurchaseEvent::SuccessfulPurchase);
+                    },
+                );
+            parent
+                .spawn((
+                    Node {
+                        // width: Val::Px(160.0),
+                        height: Val::Px(40.0),
+                        ..Default::default()
+                    },
+                    BackgroundColor(Color::WHITE),
+                    children![(Text::new("Buy 100 Fuel $100"), TextColor(Color::BLACK))],
+                    Pickable::default(),
+                ))
+                .observe(
+                    |mut trigger: Trigger<Pointer<Pressed>>,
+                     mut train_fuel: ResMut<TrainFuel>,
+                     mut inventories: Query<&mut Inventory>,
+                     mut ev: EventWriter<PurchaseEvent>| {
+                        let cost = 100;
+
+                        let total_owned = {
+                            let mut total = 0;
+                            for mut inventory in &mut inventories {
+                                total += *inventory.items.entry(Item::Money).or_insert(0);
+                            }
+                            total
+                        };
+                        if total_owned < cost {
+                            ev.write(PurchaseEvent::FailedPurchase);
+                            return;
+                        }
+                        train_fuel.0 += 100.0;
+                        ev.write(PurchaseEvent::SuccessfulPurchase);
                     },
                 );
             parent
@@ -502,6 +566,7 @@ fn evaluate_contracts(
                 .items
                 .entry(contract.reward.0.clone())
                 .or_insert(0) += contract.reward.1;
+            break;
         }
         info!("Succeeded contract");
     }

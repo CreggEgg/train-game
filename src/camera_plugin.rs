@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    GameState,
+    GameState, MainGameObject,
     train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
 };
 
@@ -19,6 +19,7 @@ pub fn camera_plugin(app: &mut App) {
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
+        MainGameObject,
         Name::new("Camera"),
         IsDefaultUiCamera,
         Camera2d,
@@ -38,7 +39,7 @@ const CAMERA_MAX_SPEED: f32 = 500.0;
 const CAMERA_ACCELERATION: f32 = 10000.0;
 
 fn move_camera(
-    mut camera: Query<&mut Transform, With<Camera>>,
+    mut camera: Single<&mut Transform, With<Camera>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     train_length: Res<TrainLength>,
@@ -98,7 +99,7 @@ fn move_camera(
 
     camera_speeds.vy += acely;
 
-    let mut trans /* rights */ = camera.single_mut().unwrap();
+    let mut trans /* rights */ = camera;
 
     trans.translation.x += camera_speeds.vx.clamp(-CAMERA_MAX_SPEED, CAMERA_MAX_SPEED)
         * time.delta_secs()

@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::MainGameObject;
+
 use super::Train;
 
 #[derive(Component)]
@@ -11,6 +13,7 @@ const SPEED_TEXT_PADDING: Val = Val::Px(10.0);
 
 pub(crate) fn make_ui(mut commands: Commands) {
     commands.spawn((
+        MainGameObject,
         Text::new("Speed: "),
         TextFont {
             font_size: SPEED_FONT_SIZE,

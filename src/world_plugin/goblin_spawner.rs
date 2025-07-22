@@ -1,4 +1,5 @@
 use crate::{
+    MainGameObject,
     control_panel_plugin::AdvanceBlocker,
     goblins::Goblin,
     train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
@@ -56,6 +57,7 @@ pub fn spawn_goblins(
                 match g {
                     GoblinType::Basic => {
                         commands.spawn((
+                            MainGameObject,
                             Goblin,
                             Sprite::from_color(Color::srgb(0.0, 1.0, 1.0), Vec2::ONE),
                             Transform {

@@ -5,7 +5,7 @@ use rand::{
 };
 
 use crate::{
-    GameState, ImageAssets, InGameState,
+    GameState, ImageAssets, InGameState, MainGameObject,
     train_plugin::{Train, TrainLength, TrainState, TrainStats},
     ui_state::InMenu,
     world_plugin::{
@@ -325,6 +325,7 @@ const NUM_RAILS: usize = 8;
 fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
     for i in 0..NUM_RAILS {
         commands.spawn((
+            MainGameObject,
             Sprite::from_image(image_assets.rail.clone()),
             Transform::default(),
             WorldObject((i as f32 - 4.) * RAIL_WIDTH),

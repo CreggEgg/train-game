@@ -1,7 +1,7 @@
 use bevy::{math::FloatPow, prelude::*};
 
 use crate::{
-    GameState, ImageAssets,
+    GameState, ImageAssets, MainGameObject,
     build_plugin::{BuildLocation, Building},
     world_plugin::{CurrentStop, GenerateNextStop, NextStop, Stop},
 };
@@ -15,6 +15,9 @@ pub struct MaxPixelHeightOfTrain {
 
 #[derive(Resource)]
 pub struct TrainLength(pub usize);
+
+#[derive(Resource)]
+pub struct TrainFuel(pub f32);
 
 #[derive(Resource)]
 pub struct TrainStats {
@@ -37,17 +40,44 @@ pub enum TrainState {
     Arriving,
 }
 
+#[derive(Event)]
+pub struct RunOutOfFuelEvent;
+
+fn reset_resources(
+    mut train_stats: ResMut<TrainStats>,
+    mut train_length: ResMut<TrainLength>,
+    mut train_fuel: ResMut<TrainFuel>,
+    mut max_pixel_height_of_train: ResMut<MaxPixelHeightOfTrain>,
+    mut train_state: ResMut<NextState<TrainState>>,
+) {
+    *train_stats = TrainStats {
+        acceleration: 1.0,
+        max_velocity: 27.0,
+    };
+    *train_length = TrainLength(1);
+    *train_fuel = TrainFuel(1000.0);
+    *max_pixel_height_of_train = MaxPixelHeightOfTrain::default();
+    train_state.set(TrainState::default());
+}
+
 pub fn train_plugin(app: &mut App) {
     app.insert_resource(TrainStats {
         acceleration: 1.0,
         max_velocity: 27.0,
     })
     .insert_resource(TrainLength(1))
+    .insert_resource(TrainFuel(1000.0))
     .add_event::<AdvanceEvent>()
     .add_event::<StopEvent>()
+    .add_event::<RunOutOfFuelEvent>()
     .init_state::<TrainState>()
     .add_systems(OnEnter(GameState::InGame), spawn_train)
+    .add_systems(OnEnter(GameState::MainMenu), reset_resources)
     .add_systems(Update, update_train.run_if(resource_changed::<TrainLength>))
+    .add_systems(
+        Update,
+        handle_run_out_of_fuel.run_if(resource_changed::<TrainFuel>),
+    )
     .init_resource::<MaxPixelHeightOfTrain>()
     .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
     .add_systems(
@@ -106,6 +136,7 @@ fn spawn_train(
                 distance: 0.,
                 velocity: 0.,
             },
+            MainGameObject,
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -178,6 +209,8 @@ fn move_train(
     mut commands: Commands,
     time: Res<Time>,
     mut ev: EventWriter<StopEvent>,
+    mut fuel: ResMut<TrainFuel>,
+    mut fuel_ev: EventWriter<RunOutOfFuelEvent>,
 ) {
     let mut train = train.single_mut().unwrap();
 
@@ -190,6 +223,10 @@ fn move_train(
     train.velocity = train.velocity.min(train_stats.max_velocity);
 
     train.distance += train.velocity * time.delta_secs();
+    fuel.0 -= train.velocity * time.delta_secs();
+    if fuel.0 <= 0.0 {
+        fuel_ev.write(RunOutOfFuelEvent);
+    }
     // info!("Distance: {}", train.distance);
 
     if next_stop.distance - train.distance < 17.0 {
@@ -246,5 +283,22 @@ fn update_train_height(
         if nh != height.height {
             height.height = nh;
         }
+    }
+}
+
+fn handle_run_out_of_fuel(
+    mut ev: EventReader<RunOutOfFuelEvent>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut commands: Commands,
+    main_game_objects: Query<Entity, (Without<Camera>, With<MainGameObject>)>,
+) {
+    for ev in ev.read() {
+        'a: for main_game_object in &main_game_objects {
+            commands
+                .entity(main_game_object)
+                .despawn_related::<Children>()
+                .despawn();
+        }
+        next_state.set(GameState::MainMenu);
     }
 }

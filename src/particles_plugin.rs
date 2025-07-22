@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_hanabi::prelude::*;
 
-use crate::{GameState, train_plugin::TrainState};
+use crate::{GameState, MainGameObject, train_plugin::TrainState};
 
 #[derive(Resource)]
 pub struct Particles {
@@ -88,6 +88,7 @@ fn setup_particles(mut commands: Commands, mut effects: ResMut<Assets<EffectAsse
 
 fn play_spark_assset(mut commands: Commands, particles: Res<Particles>) {
     commands.spawn((
+        MainGameObject,
         Spark,
         ParticleEffect::new(particles.sparking.clone()),
         Transform::from_translation(Vec3::Y),

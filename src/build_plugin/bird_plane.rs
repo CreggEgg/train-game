@@ -1,6 +1,11 @@
+use std::time::Duration;
+
 use bevy::{ecs::spawn::SpawnIter, image, prelude::*};
 
-use crate::{GameState, ImageAssets, InGameState, animations::Animation};
+use crate::{
+    GameState, ImageAssets, InGameState, MainGameObject, animations::Animation,
+    train_plugin::MaxPixelHeightOfTrain,
+};
 
 #[derive(Component, Clone)]
 pub struct Roost {
@@ -21,9 +26,9 @@ impl Default for Roost {
 }
 
 #[derive(Event)]
-struct SendOut {
-    bird: usize,
-    roost: Entity,
+enum BirdEvent {
+    SendOut { bird: usize, roost: Entity },
+    Return { bird: usize, roost: Entity },
 }
 
 pub fn roost_menu(builder: &mut ChildSpawnerCommands, roost: &Roost, building: Entity) {
@@ -49,8 +54,8 @@ pub fn roost_menu(builder: &mut ChildSpawnerCommands, roost: &Roost, building: E
                     parent.spawn(send_out_button()).observe(
                         move |trigger: Trigger<Pointer<Pressed>>,
                               mut commands: Commands,
-                              mut send_out_events: EventWriter<SendOut>| {
-                            send_out_events.write(SendOut {
+                              mut send_out_events: EventWriter<BirdEvent>| {
+                            send_out_events.write(BirdEvent::SendOut {
                                 bird: i,
                                 roost: building,
                             });
@@ -64,7 +69,6 @@ pub fn roost_menu(builder: &mut ChildSpawnerCommands, roost: &Roost, building: E
             });
     }
 }
-
 fn send_out_button() -> impl Bundle + use<> {
     (
         TextColor::BLACK,
@@ -79,7 +83,7 @@ fn out_button() -> impl Bundle + use<> {
 }
 
 pub fn bird_plane_plugin(app: &mut App) {
-    app.add_event::<SendOut>().add_systems(
+    app.add_event::<BirdEvent>().add_systems(
         Update,
         (send_birds_out, update_birds)
             .run_if(in_state(GameState::InGame).and(in_state(InGameState::Running))),
@@ -87,64 +91,110 @@ pub fn bird_plane_plugin(app: &mut App) {
 }
 
 fn send_birds_out(
-    mut ev: EventReader<SendOut>,
+    mut ev: EventReader<BirdEvent>,
     mut roosts: Query<(&GlobalTransform, &mut Roost)>,
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
 ) {
     for ev in ev.read() {
-        let SendOut { bird, roost } = ev;
-        let (transform, roost) = roosts.get_mut(*roost).unwrap();
-        let bird = roost.birds.get(*bird).unwrap();
-        commands.spawn((
-            bird.clone(),
-            Transform::from_translation(transform.translation()),
-            Sprite::from_image(image_assets.bird_plane_away_1.clone()),
-            Animation(
-                vec![
-                    image_assets.bird_plane_away_1.clone(),
-                    image_assets.bird_plane_away_2.clone(),
-                    image_assets.bird_plane_away_3.clone(),
-                    image_assets.bird_plane_away_4.clone(),
-                    image_assets.bird_plane_away_5.clone(),
-                    image_assets.bird_plane_away_6.clone(),
-                    image_assets.bird_plane_away_7.clone(),
-                    image_assets.bird_plane_away_8.clone(),
-                    image_assets.bird_plane_away_9.clone(),
-                    image_assets.bird_plane_away_10.clone(),
-                    image_assets.bird_plane_away_11.clone(),
-                    image_assets.bird_plane_away_12.clone(),
-                    image_assets.bird_plane_away_13.clone(),
-                    image_assets.bird_plane_away_14.clone(),
-                    image_assets.bird_plane_away_15.clone(),
-                    image_assets.bird_plane_away_16.clone(),
-                    image_assets.bird_plane_away_17.clone(),
-                    image_assets.bird_plane_away_18.clone(),
-                    image_assets.bird_plane_away_19.clone(),
-                    image_assets.bird_plane_away_20.clone(),
-                    image_assets.bird_plane_away_21.clone(),
-                    image_assets.bird_plane_away_22.clone(),
-                    image_assets.bird_plane_away_23.clone(),
-                    image_assets.bird_plane_away_24.clone(),
-                    image_assets.bird_plane_away_25.clone(),
-                    image_assets.bird_plane_away_26.clone(),
-                    image_assets.bird_plane_away_27.clone(),
-                    image_assets.bird_plane_away_28.clone(),
-                    image_assets.bird_plane_away_29.clone(),
-                    image_assets.bird_plane_away_30.clone(),
-                    image_assets.bird_plane_away_31.clone(),
-                    image_assets.bird_plane_away_32.clone(),
-                    image_assets.bird_plane_away_33.clone(),
-                    image_assets.bird_plane_away_34.clone(),
-                ],
-                0,
-            ),
-        ));
+        match ev {
+            BirdEvent::SendOut {
+                bird: bird_idx,
+                roost: roost_entity,
+            } => {
+                let (transform, mut roost) = roosts.get_mut(*roost_entity).unwrap();
+                let bird = roost.birds.get_mut(*bird_idx).unwrap();
+                bird.out = true;
+                commands.spawn((
+                    MainGameObject,
+                    bird.clone(),
+                    Transform::from_translation(transform.translation() + Vec3::Y * 40.0),
+                    Sprite::from_image(image_assets.bird_plane_away_1.clone()),
+                    BirdTimer(Timer::new(Duration::from_secs_f32(3.0), TimerMode::Once)),
+                    BirdReturnData {
+                        location: transform.translation().xy() + Vec2::Y * 30.0,
+                        roost: *roost_entity,
+                        bird: *bird_idx,
+                    },
+                    Animation(
+                        vec![
+                            image_assets.bird_plane_away_1.clone(),
+                            image_assets.bird_plane_away_2.clone(),
+                            image_assets.bird_plane_away_3.clone(),
+                            image_assets.bird_plane_away_4.clone(),
+                            image_assets.bird_plane_away_5.clone(),
+                            image_assets.bird_plane_away_6.clone(),
+                            image_assets.bird_plane_away_7.clone(),
+                            image_assets.bird_plane_away_8.clone(),
+                            image_assets.bird_plane_away_9.clone(),
+                            image_assets.bird_plane_away_10.clone(),
+                            image_assets.bird_plane_away_11.clone(),
+                            image_assets.bird_plane_away_12.clone(),
+                            image_assets.bird_plane_away_13.clone(),
+                            image_assets.bird_plane_away_14.clone(),
+                            image_assets.bird_plane_away_15.clone(),
+                            image_assets.bird_plane_away_16.clone(),
+                            image_assets.bird_plane_away_17.clone(),
+                            image_assets.bird_plane_away_18.clone(),
+                            image_assets.bird_plane_away_19.clone(),
+                            image_assets.bird_plane_away_20.clone(),
+                            image_assets.bird_plane_away_21.clone(),
+                            image_assets.bird_plane_away_22.clone(),
+                            image_assets.bird_plane_away_23.clone(),
+                            image_assets.bird_plane_away_24.clone(),
+                            image_assets.bird_plane_away_25.clone(),
+                            image_assets.bird_plane_away_26.clone(),
+                            image_assets.bird_plane_away_27.clone(),
+                            image_assets.bird_plane_away_28.clone(),
+                            image_assets.bird_plane_away_29.clone(),
+                            image_assets.bird_plane_away_30.clone(),
+                            image_assets.bird_plane_away_31.clone(),
+                            image_assets.bird_plane_away_32.clone(),
+                            image_assets.bird_plane_away_33.clone(),
+                            image_assets.bird_plane_away_34.clone(),
+                        ],
+                        0,
+                    ),
+                ));
+            }
+            BirdEvent::Return { bird, roost } => {
+                let (_, mut roost) = roosts.get_mut(*roost).unwrap();
+                let bird = roost.birds.get_mut(*bird).unwrap();
+                bird.out = false;
+            }
+        };
     }
 }
 
-fn update_birds(mut birds: Query<&mut Transform, With<Bird>>, time: Res<Time>) {
-    for mut bird in &mut birds {
-        bird.translation.y += time.delta_secs() * 100.0;
+#[derive(Component)]
+struct BirdTimer(Timer);
+#[derive(Component)]
+struct BirdReturnData {
+    location: Vec2,
+    roost: Entity,
+    bird: usize,
+}
+
+fn update_birds(
+    mut birds: Query<(Entity, &mut Transform, &mut BirdTimer, &BirdReturnData), With<Bird>>,
+    height: Res<MaxPixelHeightOfTrain>,
+    mut commands: Commands,
+    time: Res<Time>,
+    mut ev: EventWriter<BirdEvent>,
+) {
+    for (bird_entity, mut bird, mut timer, bird_return) in &mut birds {
+        if bird.translation.y >= (height.height + 100.0).max(1000.0) && !timer.0.finished() {
+            timer.0.tick(time.delta());
+        } else {
+            bird.translation.y +=
+                time.delta_secs() * 100.0 * if timer.0.finished() { -1.0 } else { 1.0 };
+            if bird.translation.y <= bird_return.location.y {
+                commands.entity(bird_entity).despawn();
+                ev.write(BirdEvent::Return {
+                    bird: bird_return.bird,
+                    roost: bird_return.roost,
+                });
+            }
+        }
     }
 }

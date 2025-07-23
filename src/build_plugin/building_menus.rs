@@ -163,7 +163,7 @@ fn update_inspected_building(
                     }
                 }
                 super::BuildingType::Roost => {
-                    roost_menu(parent, &mut roost.unwrap(), building_entity);
+                    roost_menu(parent, &roost.unwrap(), building_entity);
                 }
                 super::BuildingType::AlchemyLab => {
                     parent

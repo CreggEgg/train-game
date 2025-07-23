@@ -11,7 +11,7 @@ use crate::{
 };
 
 const SKIP_MAIN_MENU: bool = false;
-const LOG_DISTANCE: bool = true;
+// const LOG_DISTANCE: bool = true;
 const BUILD_LOCATION_GIZMO: bool = false;
 const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;

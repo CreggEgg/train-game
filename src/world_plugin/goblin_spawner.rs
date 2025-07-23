@@ -2,7 +2,7 @@ use crate::{
     MainGameObject,
     control_panel_plugin::AdvanceBlocker,
     goblins::Goblin,
-    train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
+    train_plugin::{MaxPixelHeightOfTrain, TrainLength},
 };
 use bevy::prelude::*;
 

@@ -62,8 +62,8 @@ struct ImageAssets {
     shipping_container: Handle<Image>,
     #[asset(path = "Contract.png")]
     contract: Handle<Image>,
-    #[asset(path = "BoothCard.png")]
-    booth_card: Handle<Image>,
+    // #[asset(path = "BoothCard.png")]
+    // booth_card: Handle<Image>,
     #[asset(path = "DebugBuilding.png")]
     debug_building: Handle<Image>,
     #[asset(path = "Ground.png")]

@@ -50,5 +50,5 @@ pub(crate) fn update_train_speed(
 
     let speed = train.velocity;
 
-    *writer.text(*speed_ui, 1) = format!("{:.2}", speed);
+    *writer.text(*speed_ui, 1) = format!("{speed:.2}");
 }

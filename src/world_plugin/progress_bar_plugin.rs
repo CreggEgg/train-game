@@ -1,13 +1,11 @@
 use std::f32::consts::PI;
 
-use bevy::{ecs::entity, prelude::*, render::view::visibility};
-use lerp;
+use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject,
-    train_plugin::{Train, TrainState, TrainStats},
-    ui_state::InMenu,
-    world_plugin::{self, CurrentStop, NextStop, NumberedStop, Stop},
+    train_plugin::Train,
+    world_plugin::{CurrentStop, NextStop, NumberedStop, Stop},
 };
 
 fn reset_resources(mut anim_timer: ResMut<AnimTimer>, mut last_stop_dist: ResMut<LastStopDist>) {
@@ -130,7 +128,6 @@ fn update_progress_bar(
     next_stop: Res<NextStop>,
     train_query: Query<&Train>,
     mut map_loco_query: Query<&mut Node, (With<MapLocomotive>, Without<MapPin>)>,
-    mut map_pin_query: Query<(&mut Node, &mut MapPin), Without<MapLocomotive>>,
     anim_timer: Res<AnimTimer>,
 ) {
     if !train_query.is_empty() {
@@ -164,7 +161,6 @@ fn start_anim_timer(mut anim_timer: ResMut<AnimTimer>, current_stop: Res<Current
 fn animate_progress_bar(
     mut anim_timer: ResMut<AnimTimer>,
     time: Res<Time>,
-    mut map_loco_query: Query<&mut Node, (With<MapLocomotive>, Without<MapPin>)>,
     mut map_pin_query: Query<(&mut Node, &mut MapPin), Without<MapLocomotive>>,
 ) {
     if anim_timer.time > 2.5 {
@@ -198,13 +194,11 @@ fn animate_progress_bar(
     if anim_timer.time <= 1.5 {
         anim_timer.swapped = false;
     }
-    if anim_timer.time > 1.5 {
-        if !anim_timer.swapped {
-            for mut map_pin in &mut map_pin_query {
-                map_pin.1.right = !map_pin.1.right;
-            }
-            anim_timer.swapped = true;
+    if anim_timer.time > 1.5 && !anim_timer.swapped {
+        for mut map_pin in &mut map_pin_query {
+            map_pin.1.right = !map_pin.1.right;
         }
+        anim_timer.swapped = true;
     }
     if anim_timer.time > 1.5 && anim_timer.time <= 2.0 {
         let full_width: f32 = 512.0 * 0.08;
@@ -222,7 +216,7 @@ fn animate_progress_bar(
 }
 
 fn sinerp(x: f32) -> f32 {
-    return -(ops::cos(PI * x) - 1.) / 2.;
+    -(ops::cos(PI * x) - 1.) / 2.
 }
 
 fn update_last_stop_dist(mut last_stop_dist: ResMut<LastStopDist>, train_query: Query<&Train>) {

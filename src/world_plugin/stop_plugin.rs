@@ -1,25 +1,15 @@
 use std::f32::consts::PI;
 
-use bevy::{
-    color::palettes::css::{RED, YELLOW},
-    ecs::{
-        name,
-        relationship::{RelatedSpawnerCommands, Relationship},
-    },
-    platform::collections::HashMap,
-    prelude::*,
-    reflect::Array,
-    state::commands,
-};
+use bevy::prelude::*;
 use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
     FontAssets, GameState, ImageAssets, InGameState, MainGameObject,
     control_panel_plugin::AdvanceBlocker,
     resources_plugin::{Inventory, Item},
-    train_plugin::{TrainFuel, TrainLength, TrainState, TrainStats},
+    train_plugin::{TrainFuel, TrainLength, TrainState},
     ui_state::InMenu,
-    world_plugin::{self, NextStop},
+    world_plugin::{self},
 };
 
 use super::{CurrentStop, GameWorld, NumberedStop, Stop};
@@ -143,7 +133,6 @@ struct FadeTime {
 #[derive(Component)]
 struct Signature {
     time: f32,
-    visible: bool,
 }
 
 fn spawn_town_arrival_text(
@@ -156,7 +145,7 @@ fn spawn_town_arrival_text(
     if town_name == "Goblin Ambush" {
         return;
     }
-    println!("arriving at town: {}", town_name);
+    println!("arriving at town: {town_name}");
     let display_text: String = "Welcome To ".to_string() + &town_name;
     println!("{}", display_text.len());
     let text_size: f32 = (100.0 - (1.25 * display_text.len() as f32)).clamp(20., 80.);
@@ -165,7 +154,7 @@ fn spawn_town_arrival_text(
         MainGameObject,
         Text::new(display_text),
         TextFont {
-            font: font_assets.town_title_font.clone().into(),
+            font: font_assets.town_title_font.clone(),
             font_size: text_size,
             ..Default::default()
         },
@@ -240,7 +229,7 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                     Pickable::default(),
                 ))
                 .observe(
-                    |mut trigger: Trigger<Pointer<Pressed>>,
+                    |_trigger: Trigger<Pointer<Pressed>>,
                      mut train_length: ResMut<TrainLength>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
@@ -273,7 +262,7 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                     Pickable::default(),
                 ))
                 .observe(
-                    |mut trigger: Trigger<Pointer<Pressed>>,
+                    |_trigger: Trigger<Pointer<Pressed>>,
                      mut train_fuel: ResMut<TrainFuel>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
@@ -305,7 +294,7 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                     ..Default::default()
                 },))
                 .with_children(|parent| {
-                    for i in 0..6 {
+                    for _ in 0..6 {
                         parent.spawn((
                             ContractImage,
                             Node {
@@ -460,7 +449,7 @@ fn show_stop_menu(
                                         left: Val::Percent(21.),
                                         ..Default::default()
                                     },
-                                    Text::new(format!("X",)),
+                                    Text::new("X".to_string()),
                                     TextColor(Color::BLACK)
                                 ),
                             ], // BackgroundColor(Color::WHITE),
@@ -510,7 +499,6 @@ fn show_stop_menu(
                                                     .with_color(Color::linear_rgba(1., 1., 1., 1.)),
                                                 Signature {
                                                     time: 0.,
-                                                    visible: true,
                                                 }
                                             ),
                                         );
@@ -531,13 +519,13 @@ fn show_stop_menu(
 }
 fn hide_stop_menu(
     interaction_query: Query<
-        (&Interaction, &CloseMenuButton),
-        (Changed<Interaction>, With<Button>),
+        &Interaction,
+        (Changed<Interaction>, With<Button>, With<CloseMenuButton>),
     >,
-    mut menu: Query<&mut Visibility, With<StopMenu>>,
+    // _menu: Query<&mut Visibility, With<StopMenu>>,
     mut menu_state: ResMut<NextState<InMenu>>,
 ) {
-    for (interaction, button) in &interaction_query {
+    for interaction in &interaction_query {
         if *interaction == Interaction::Pressed {
             menu_state.set(InMenu::None);
         }
@@ -545,7 +533,6 @@ fn hide_stop_menu(
 }
 
 fn handle_signature_animation(
-    mut commands: Commands,
     mut signatures: Query<(&mut ImageNode, &mut Signature)>,
     time: Res<Time>,
     image_assets: Res<ImageAssets>,

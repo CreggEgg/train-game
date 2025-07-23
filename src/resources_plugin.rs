@@ -43,17 +43,9 @@ impl Item {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Inventory {
     pub items: HashMap<Item, usize>,
-}
-
-impl Default for Inventory {
-    fn default() -> Self {
-        Self {
-            items: HashMap::new(),
-        }
-    }
 }
 
 impl Inventory {
@@ -61,19 +53,19 @@ impl Inventory {
         self.items.keys().len() == 0 || self.items.values().all(|it| *it == 0)
     }
 
-    pub fn add_other(&mut self, mut other: Self, max_stack_size: usize) -> Self {
-        let other_items = other.items.keys().cloned().collect::<Vec<_>>();
-        for item in other_items {
-            let capacity = max_stack_size - self.items.get(&item).cloned().unwrap_or(0);
-            let slot = other.items.get_mut(&item).unwrap();
-            let amount = capacity.min(*slot);
-            *slot -= amount;
-            *self.items.entry(item).or_insert(0) += amount;
-        }
-        other
-    }
+    // pub fn add_other(&mut self, mut other: Self, max_stack_size: usize) -> Self {
+    //     let other_items = other.items.keys().cloned().collect::<Vec<_>>();
+    //     for item in other_items {
+    //         let capacity = max_stack_size - self.items.get(&item).cloned().unwrap_or(0);
+    //         let slot = other.items.get_mut(&item).unwrap();
+    //         let amount = capacity.min(*slot);
+    //         *slot -= amount;
+    //         *self.items.entry(item).or_insert(0) += amount;
+    //     }
+    //     other
+    // }
 }
 
-pub fn resources_plugin(app: &mut App) {
-    app;
+pub fn resources_plugin(_app: &mut App) {
+    // app;
 }

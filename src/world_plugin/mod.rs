@@ -1,4 +1,4 @@
-use bevy::{ecs::query, prelude::*};
+use bevy::prelude::*;
 use rand::{
     Rng, SeedableRng,
     seq::{IndexedMutRandom, IndexedRandom},
@@ -7,12 +7,9 @@ use rand::{
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject,
     resources_plugin::{Inventory, Item},
-    train_plugin::{Train, TrainLength, TrainState, TrainStats},
+    train_plugin::{Train, TrainLength, TrainState},
     ui_state::InMenu,
-    world_plugin::{
-        goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
-        progress_bar_plugin::progress_bar_plugin,
-    },
+    world_plugin::goblin_spawner::{GoblinSpawner, GoblinType, spawn_goblins},
 };
 
 mod goblin_spawner;
@@ -60,7 +57,7 @@ impl Stop {
                                 WorldClickable
                             ))
                             .observe(
-                                |mut trigger: Trigger<Pointer<Pressed>>,
+                                |_trigger: Trigger<Pointer<Pressed>>,
                                 train_state: Res<State<TrainState>>,
                                  menu_state: Res<State<InMenu>>, mut next_state: ResMut<NextState<InMenu>>| {
                                     if *menu_state == InMenu::None && *train_state == TrainState::Stopped {
@@ -81,7 +78,7 @@ impl Stop {
                     WorldObject(distance),
                 ))
                 .with_children(|parent| {
-                    for minecart in minecarts.iter().into_iter() {
+                    for minecart in minecarts.iter() {
                         let minecart_image: Handle<Image> =
                         match minecart.resource_type {
                             Item::Metal => { image_assets.minecart_metal.clone() }
@@ -98,9 +95,7 @@ impl Stop {
                                 minecart.clone(),
                             ))
                             .observe(
-                                |mut trigger: Trigger<Pointer<Pressed>>,
-                                train_state: Res<State<TrainState>>,
-                                 menu_state: Res<State<InMenu>>, mut next_state: ResMut<NextState<InMenu>>,
+                                |trigger: Trigger<Pointer<Pressed>>,
                                  mut minecart_query: Query<(Entity, &mut Minecart, &mut Sprite)>,
                                  image_assets: Res<ImageAssets>,
                                  mut inventories: Query<&mut Inventory>, | {
@@ -150,8 +145,8 @@ impl Stop {
     fn generate_name(&self, rng: &mut impl Rng) -> String {
         match self {
             Stop::Town | Self::Initial => generate_town_name(rng),
-            Stop::Mine { minecarts } => generate_mine_name(rng),
-            Stop::GoblinAttack { waves } => "Goblin Ambush".into(),
+            Stop::Mine { .. } => generate_mine_name(rng),
+            Stop::GoblinAttack { .. } => "Goblin Ambush".into(),
         }
     }
 
@@ -180,7 +175,7 @@ impl Stop {
     }
 }
 
-const FIRST_HALVES: &[&'static str] = &[
+const FIRST_HALVES: &[&str] = &[
     "Snod",
     "Bell",
     "South",
@@ -192,7 +187,7 @@ const FIRST_HALVES: &[&'static str] = &[
     "Pen",
     "Lynn",
 ];
-const SECOND_HALVES: &[&'static str] = &[
+const SECOND_HALVES: &[&str] = &[
     " Upon Trent",
     "sbury",
     "ceston",
@@ -213,7 +208,7 @@ const SECOND_HALVES: &[&'static str] = &[
     "sylvania",
 ];
 
-const THIRD_HALVES: &[&'static str] = &[
+const THIRD_HALVES: &[&str] = &[
     " Mines",
     " Quarry",
     " Cave",

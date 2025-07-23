@@ -276,7 +276,7 @@ fn spawn_blueprint_window(
                     children![
                         (
                             ImageNode::from_atlas_image(
-                                building_type.get_texture(&*image_assets),
+                                building_type.get_texture(&image_assets),
                                 texture_atlas.clone(),
                             ),
                             Node {

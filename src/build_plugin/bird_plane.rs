@@ -58,7 +58,7 @@ pub fn roost_menu(builder: &mut ChildSpawnerCommands, roost: &Roost, building: E
                                 roost: building,
                             });
                             commands
-                                .entity(parent_id.clone())
+                                .entity(parent_id)
                                 .despawn_related::<Children>()
                                 .with_child(out_button());
                         },

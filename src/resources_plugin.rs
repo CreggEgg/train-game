@@ -11,11 +11,11 @@ pub enum Item {
     Wood,
     Clay,
     Brick,
+    Stone,
     Metal,
     Glass,
     Bullet,
     Money,
-    Stone,
 }
 impl Item {
     pub(crate) fn name(&self) -> &'static str {
@@ -25,11 +25,11 @@ impl Item {
             Item::Wood => "Wood",
             Item::Clay => "Clay",
             Item::Brick => "Brick",
+            Item::Stone => "Stone",
             Item::Metal => "Metal",
             Item::Glass => "Glass",
             Item::Bullet => "Bullets",
             Item::Money => "Money",
-            Item::Stone => "Stone",
         }
     }
 
@@ -37,6 +37,7 @@ impl Item {
         match self {
             Item::Metal => image_assets.item_metal.clone(),
             Item::Wood => image_assets.item_wood.clone(),
+            Item::Stone => image_assets.item_stone.clone(),
             _ => image_assets.item_metal.clone(),
         }
     }

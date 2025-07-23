@@ -1,7 +1,4 @@
-use bevy::{
-    color::palettes::css::{GREEN, RED},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{GameState, MainGameObject};
 
@@ -21,6 +18,6 @@ fn spawn_fuel_display(mut commands: Commands) {
             ..Default::default()
         },
         // BackgroundColor(RED.into()),
-        children![(Text::new("100 L"))],
+        children![Text::new("100 L")],
     ));
 }

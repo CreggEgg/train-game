@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState, MainGameObject,
-    train_plugin::{MaxPixelHeightOfTrain, TrainLength, TrainStats},
+    train_plugin::{MaxPixelHeightOfTrain, TrainLength},
 };
 
 #[derive(Default, Resource)]
@@ -39,7 +39,7 @@ const CAMERA_MAX_SPEED: f32 = 500.0;
 const CAMERA_ACCELERATION: f32 = 10000.0;
 
 fn move_camera(
-    mut camera: Single<&mut Transform, With<Camera>>,
+    camera: Single<&mut Transform, With<Camera>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
     train_length: Res<TrainLength>,

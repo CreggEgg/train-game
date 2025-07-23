@@ -1,6 +1,9 @@
-use bevy::{color::palettes::css::WHITE, prelude::*, text::FontWeight};
+use bevy::prelude::*;
 
-use crate::{resources_plugin::Inventory, ui_state::InMenu, FontAssets, GameState, ImageAssets, MainGameObject};
+use crate::{
+    FontAssets, GameState, ImageAssets, MainGameObject, resources_plugin::Inventory,
+    ui_state::InMenu,
+};
 
 use super::{
     Building, ResourceProduction,
@@ -185,15 +188,15 @@ fn update_inspected_building(
                                 };
 
                                 let mut button = parent.spawn((
-                                    Node { 
-                                        width: Val::Percent(100.0), 
-                                        height: Val::Px(100.0), 
+                                    Node {
+                                        width: Val::Percent(100.0),
+                                        height: Val::Px(100.0),
                                         display: Display::Flex,
                                         flex_direction: FlexDirection::Row,
                                         align_items: AlignItems::Center,
                                         justify_content: JustifyContent::Center,
-                                        ..Default::default() 
-                                    }, 
+                                        ..Default::default()
+                                    },
                                     RecipeSwitchButton(recipe.clone()),
                                     BackgroundColor(if active {
                                             Color::srgba(0.0, 0.0, 0.0, 0.2)
@@ -203,18 +206,18 @@ fn update_inspected_building(
                                         BorderRadius::all(Val::Px(15.0)),
 
                                         children![
-                                            (ImageNode::new(recipe.input.clone().unwrap().0.get_image(&image_assets)),),
-                                            (Text::new(format!("x{}", recipe.input.clone().unwrap().1))),
+                                            ImageNode::new(recipe.input.clone().unwrap().0.get_image(&image_assets)),
+                                            Text::new(format!("x{}", recipe.input.clone().unwrap().1)),
 
-                                            (Text::new("=>")),
-                                            (ImageNode::new(recipe.output.0.get_image(&image_assets)),),
-                                            (Text::new(format!("x{}", recipe.output.clone().1))),
+                                            Text::new("=>"),
+                                            ImageNode::new(recipe.output.0.get_image(&image_assets)),
+                                            Text::new(format!("x{}", recipe.output.clone().1)),
                                         ]
                                     ),
 
                                 );
                                 button.observe(
-                                    move |mut trigger: Trigger<Pointer<Pressed>>,
+                                    move |mut _trigger: Trigger<Pointer<Pressed>>,
                                     mut backgrounds: Query<(&mut BackgroundColor, &RecipeSwitchButton)>,
                                      mut buildings: Query<
                                         &mut ResourceProduction,
@@ -222,7 +225,7 @@ fn update_inspected_building(
                                         let mut resource_production = buildings.get_mut(building_entity).unwrap();
                                         *resource_production = recipe.clone();
 
-                                        for (mut button, RecipeSwitchButton(recipe)) in &mut backgrounds  {              
+                                        for (mut button, RecipeSwitchButton(recipe)) in &mut backgrounds  {
                                             let active = {
                                                 recipe.input == resource_production.input
                                                     && recipe.output == resource_production.output

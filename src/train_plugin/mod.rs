@@ -1,9 +1,9 @@
-use bevy::{math::FloatPow, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets, MainGameObject,
     build_plugin::{BuildLocation, Building},
-    world_plugin::{CurrentStop, GenerateNextStop, NextStop, Stop},
+    world_plugin::{CurrentStop, GenerateNextStop, NextStop},
 };
 
 mod fuel_display;
@@ -70,7 +70,7 @@ pub fn train_plugin(app: &mut App) {
         .insert_resource(TrainLength(1))
         .insert_resource(TrainFuel(1000.0))
         .add_event::<AdvanceEvent>()
-        .add_event::<StopEvent>()
+        // .add_event::<StopEvent>()
         .add_event::<RunOutOfFuelEvent>()
         .init_state::<TrainState>()
         .add_systems(OnEnter(GameState::InGame), spawn_train)
@@ -120,11 +120,11 @@ pub struct Train {
 #[derive(Event)]
 pub struct AdvanceEvent;
 
-#[derive(Event)]
-pub struct StopEvent {
-    stop: Stop,
-    name: String,
-}
+// #[derive(Event)]
+// pub struct StopEvent {
+//     stop: Stop,
+//     name: String,
+// }
 
 fn spawn_train(
     mut commands: Commands,
@@ -211,7 +211,7 @@ fn move_train(
     mut next_state: ResMut<NextState<TrainState>>,
     mut commands: Commands,
     time: Res<Time>,
-    mut ev: EventWriter<StopEvent>,
+    // mut ev: EventWriter<StopEvent>,
     mut fuel: ResMut<TrainFuel>,
     mut fuel_ev: EventWriter<RunOutOfFuelEvent>,
 ) {
@@ -249,10 +249,10 @@ fn move_train(
 
         train.velocity = 0.0;
 
-        ev.write(StopEvent {
-            stop: next_stop.stop.0.clone(),
-            name: next_stop.name.clone(),
-        });
+        // ev.write(StopEvent {
+        //     stop: next_stop.stop.0.clone(),
+        //     name: next_stop.name.clone(),
+        // });
 
         current_stop.0 = Some(next_stop.stop.clone());
 
@@ -295,8 +295,8 @@ fn handle_run_out_of_fuel(
     mut commands: Commands,
     main_game_objects: Query<Entity, (Without<Camera>, With<MainGameObject>)>,
 ) {
-    for ev in ev.read() {
-        'a: for main_game_object in &main_game_objects {
+    for _ in ev.read() {
+        for main_game_object in &main_game_objects {
             commands
                 .entity(main_game_object)
                 .despawn_related::<Children>()

@@ -49,9 +49,9 @@ fn setup_particles(mut commands: Commands, mut effects: ResMut<Assets<EffectAsse
         writer
             .lit(vec3(150.0, 0.0, 0.0))
             .add(
-                (writer
+                writer
                     .rand(ScalarType::Float)
-                    .mul(writer.lit(vec3(0.0, 75.0, 0.0)))),
+                    .mul(writer.lit(vec3(0.0, 75.0, 0.0))),
             )
             .expr(),
     );
@@ -134,7 +134,7 @@ fn setup_particles(mut commands: Commands, mut effects: ResMut<Assets<EffectAsse
     let rotation = (writer.rand(ScalarType::Float) * writer.lit(std::f32::consts::TAU)).expr();
     let init_rotation = SetAttributeModifier::new(Attribute::F32_0, rotation);
 
-    let rotation_attr = writer.attr(Attribute::F32_0).expr();
+    // let rotation_attr = writer.attr(Attribute::F32_0).expr();
     let texture_slot = writer.lit(0u32).expr();
 
     let mut module = writer.finish();

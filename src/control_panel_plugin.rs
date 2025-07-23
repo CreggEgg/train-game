@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    GameState, InGameState, MainGameObject,
-    train_plugin::{AdvanceEvent, Train},
-    ui_state::InMenu,
+    GameState, InGameState, MainGameObject, train_plugin::AdvanceEvent, ui_state::InMenu,
     world_plugin::NextStop,
 };
 

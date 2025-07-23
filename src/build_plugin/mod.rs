@@ -8,7 +8,6 @@ use bevy::{
     platform::collections::HashMap,
     prelude::*,
     window::PrimaryWindow,
-    winit::WinitSettings,
 };
 use bird_plane::Roost;
 use building_menus::BuildingInspected;

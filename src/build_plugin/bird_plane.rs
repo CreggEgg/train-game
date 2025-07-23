@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::{ecs::spawn::SpawnIter, image, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject, animations::Animation,
@@ -41,18 +41,16 @@ pub fn roost_menu(builder: &mut ChildSpawnerCommands, roost: &Roost, building: E
     // ))
     for (i, bird) in roost.birds.iter().enumerate() {
         builder
-            .spawn(
-                (Node {
-                    ..Default::default()
-                }),
-            )
+            .spawn(Node {
+                ..Default::default()
+            })
             .with_children(|parent| {
                 let parent_id = parent.target_entity();
                 if bird.out {
                     parent.spawn(out_button());
                 } else {
                     parent.spawn(send_out_button()).observe(
-                        move |trigger: Trigger<Pointer<Pressed>>,
+                        move |_trigger: Trigger<Pointer<Pressed>>,
                               mut commands: Commands,
                               mut send_out_events: EventWriter<BirdEvent>| {
                             send_out_events.write(BirdEvent::SendOut {

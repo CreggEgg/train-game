@@ -16,6 +16,7 @@ const BUILD_LOCATION_GIZMO: bool = true;
 const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;
 const START_WITH_CONTRACT: bool = true;
+// const START_WITH_MONEY: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -33,6 +34,9 @@ pub fn debug_plugin(app: &mut App) {
     if START_WITH_CONTRACT {
         app.add_systems(OnEnter(GameState::InGame), give_debug_contract);
     }
+    // if START_WITH_MONEY {
+    //     app.add_systems(OnEnter(GameState::InGame), give_debug_money);
+    // }
 }
 
 fn build_location_gizmo(
@@ -95,3 +99,5 @@ fn give_debug_contract(mut contracts: ResMut<ActiveContracts>) {
         stop_number: 1,
     });
 }
+
+// fn give_debug_money(mut inventories: Query<&mut Inventory>) {}

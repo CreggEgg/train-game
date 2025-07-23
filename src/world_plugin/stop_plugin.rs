@@ -360,16 +360,9 @@ fn show_stop_menu(
                     &mut world.rng,
                     current_stop.0.clone().map(|it| it.1).unwrap_or(0),
                 );
-                let item_image_required: Handle<Image> = match contract.required.0 {
-                    Item::Metal => image_assets.item_metal.clone(),
-                    Item::Wood => image_assets.item_wood.clone(),
-                    _ => image_assets.item_metal.clone(),
-                };
-                let item_image_reward: Handle<Image> = match contract.reward.0 {
-                    Item::Metal => image_assets.item_metal.clone(),
-                    Item::Wood => image_assets.item_wood.clone(),
-                    _ => image_assets.item_metal.clone(),
-                };
+                let item_image_required: Handle<Image> =
+                    contract.required.0.get_image(&image_assets);
+                let item_image_reward: Handle<Image> = contract.reward.0.get_image(&image_assets);
 
                 commands.entity(booth).with_children(|booth| {
                     booth

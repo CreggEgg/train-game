@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 
+use crate::ImageAssets;
+
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Item {
     Food,
@@ -13,6 +15,7 @@ pub enum Item {
     Glass,
     Bullet,
     Money,
+    Stone,
 }
 impl Item {
     pub(crate) fn name(&self) -> &'static str {
@@ -26,6 +29,15 @@ impl Item {
             Item::Glass => "Glass",
             Item::Bullet => "Bullets",
             Item::Money => "Money",
+            Item::Stone => "Stone",
+        }
+    }
+
+    pub fn get_image(&self, image_assets: &ImageAssets) -> Handle<Image> {
+        match self {
+            Item::Metal => image_assets.item_metal.clone(),
+            Item::Wood => image_assets.item_wood.clone(),
+            _ => image_assets.item_metal.clone(),
         }
     }
 }

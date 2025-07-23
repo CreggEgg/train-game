@@ -85,29 +85,36 @@ impl BuildingType {
         }
     }
 
-    fn get_resource_production(&self) -> Option<ResourceProduction> {
+    fn get_resource_production(&self) -> Vec<ResourceProduction> {
         use BuildingType::*;
         match self {
-            Housing => None,
-            Farm => Some(ResourceProduction {
+            Housing => vec![],
+            Farm => vec![ResourceProduction {
                 timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
                 output: (Item::Food, 1),
                 input: None,
-            }),
-            Sawmill => Some(ResourceProduction {
+            }],
+            Sawmill => vec![ResourceProduction {
                 timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
                 output: (Item::Wood, 1),
                 input: None,
-            }),
-            Storage => None,
-            AlchemyLab => Some(ResourceProduction {
-                timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
-                input: Some((Item::Wood, 5)),
-                output: (Item::Metal, 1),
-            }),
-            Cannon => None,
-            Workshop => None,
-            Roost => None,
+            }],
+            Storage => vec![],
+            AlchemyLab => vec![
+                ResourceProduction {
+                    timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                    input: Some((Item::Wood, 5)),
+                    output: (Item::Stone, 1),
+                },
+                ResourceProduction {
+                    timer: Timer::new(Duration::from_secs_f32(2.0), TimerMode::Repeating),
+                    input: Some((Item::Stone, 5)),
+                    output: (Item::Metal, 1),
+                },
+            ],
+            Cannon => vec![],
+            Workshop => vec![],
+            Roost => vec![],
         }
     }
 }
@@ -121,7 +128,7 @@ struct GhostBuilding;
 #[derive(Component)]
 pub struct Building(BuildingType);
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct ResourceProduction {
     pub timer: Timer,
     pub output: (Item, usize),
@@ -414,8 +421,8 @@ fn on_build(
             //
             Pickable::default(),
         ));
-        if let Some(resource_production) = building_type.get_resource_production() {
-            building.insert(resource_production);
+        if let Some(resource_production) = building_type.get_resource_production().first() {
+            building.insert(resource_production.clone());
         }
         building.with_children(|parent| {
             for build_location in building_type.get_build_locations() {

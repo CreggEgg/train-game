@@ -75,6 +75,9 @@ struct ImageAssets {
     #[asset(path = "Roost.png")]
     roost: Handle<Image>,
 
+    #[asset(path = "smoke.png")]
+    steam_particle: Handle<Image>,
+
     #[asset(path = "items/metal.png")]
     item_metal: Handle<Image>,
     #[asset(path = "items/wood.png")]

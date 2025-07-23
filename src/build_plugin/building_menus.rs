@@ -1,9 +1,9 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css::WHITE, prelude::*, text::FontWeight};
 
-use crate::{FontAssets, GameState, MainGameObject, resources_plugin::Inventory, ui_state::InMenu};
+use crate::{resources_plugin::Inventory, ui_state::InMenu, FontAssets, GameState, ImageAssets, MainGameObject};
 
 use super::{
-    Building,
+    Building, ResourceProduction,
     bird_plane::{Roost, roost_menu},
 };
 
@@ -43,53 +43,58 @@ struct BuildingMenuSlot;
 fn spawn_building_menu(mut commands: Commands) {
     commands
         .spawn((
+            Pickable::default(),
             MainGameObject,
+            Visibility::Hidden,
+            BuildingMenu,
             Node {
-                width: Val::Vw(60.0),
-                height: Val::Vh(60.0),
-                margin: UiRect::AUTO,
+                width: Val::Vw(100.0),
+                height: Val::Vh(100.0),
+                display: Display::Flex,
+                position_type: PositionType::Absolute,
+                top: Val::Px(0.),
+                right: Val::Px(0.),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+
                 ..Default::default()
             },
-            BuildingMenu,
-            Visibility::Hidden,
-            BackgroundColor(Color::BLACK),
-            children![(
-                Node {
-                    width: Val::Percent(100.0),
-                    top: Val::Px(25.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
-                    ..Default::default()
-                },
-                BackgroundColor(Color::WHITE),
-                BuildingMenuSlot
-            )],
+            // BackgroundColor(Color::WHITE),
+            // children![(Text::new("X"), TextColor(Color::BLACK))],
         ))
+        .observe(
+            |mut trigger: Trigger<Pointer<Click>>, mut next_state: ResMut<NextState<InMenu>>| {
+                next_state.set(InMenu::None);
+                trigger.propagate(false);
+            },
+        )
         .with_children(|parent| {
             parent
                 .spawn((
+                    // Pickable::default(),
                     Node {
-                        width: Val::Px(25.0),
-                        height: Val::Px(25.0),
-                        display: Display::Flex,
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(0.),
-                        right: Val::Px(0.),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-
+                        width: Val::Vw(60.0),
+                        height: Val::Vh(60.0),
+                        margin: UiRect::AUTO,
+                        padding: UiRect::all(Val::Px(19.0)),
                         ..Default::default()
                     },
-                    BackgroundColor(Color::WHITE),
-                    Pickable::default(),
-                    children![(Text::new("X"), TextColor(Color::BLACK))],
+                    BorderRadius::all(Val::Px(20.0)),
+                    BackgroundColor(Color::srgba(0.7, 0.7, 0.7, 0.55)),
+                    children![(
+                        Node {
+                            width: Val::Percent(100.0),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            ..Default::default()
+                        },
+                        // BackgroundColor(Color::WHITE),
+                        BuildingMenuSlot
+                    )],
                 ))
-                .observe(
-                    |mut trigger: Trigger<Pointer<Click>>,
-                     mut next_state: ResMut<NextState<InMenu>>| {
-                        next_state.set(InMenu::None);
-                    },
-                );
+                .observe(|mut trigger: Trigger<Pointer<Click>>| {
+                    trigger.propagate(false);
+                });
         });
 }
 
@@ -103,24 +108,39 @@ fn hide_building_menu(mut menu: Query<&mut Visibility, With<BuildingMenu>>) {
 
 fn update_inspected_building(
     mut inspected_building: ResMut<BuildingInspected>,
-    mut buildings: Query<(Entity, &Building, Option<&Inventory>, Option<&mut Roost>)>,
+    mut buildings: Query<(
+        Entity,
+        &Building,
+        Option<&Inventory>,
+        Option<&mut Roost>,
+        Option<&ResourceProduction>,
+    )>,
     building_menu_slot: Single<Entity, With<BuildingMenuSlot>>,
     mut commands: Commands,
     font_assets: Res<FontAssets>,
+    image_assets: Res<ImageAssets>,
 ) {
     let Some(entity) = inspected_building.0 else {
         return;
     };
-    let Ok((building_entity, building, inventory, roost)) = buildings.get_mut(entity) else {
+    let Ok((building_entity, building, inventory, roost, resource_production)) =
+        buildings.get_mut(entity)
+    else {
         inspected_building.0 = None;
         return;
     };
-
     commands
         .entity(*building_menu_slot)
         .despawn_related::<Children>()
         .with_children(|parent| {
-            parent.spawn((Text::new(building.0.name()), TextColor::BLACK));
+            parent.spawn((
+                Text::new(building.0.name()),
+                TextColor::BLACK,
+                TextFont {
+                    font_size: 48.0,
+                    ..Default::default()
+                },
+            ));
             match building.0 {
                 super::BuildingType::Storage => {
                     for (item, amount) in &inventory.unwrap().items {
@@ -142,7 +162,89 @@ fn update_inspected_building(
                 super::BuildingType::Roost => {
                     roost_menu(parent, &mut roost.unwrap(), building_entity);
                 }
+                super::BuildingType::AlchemyLab => {
+                    parent
+                        .spawn((Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            ..Default::default()
+                        },))
+                        .with_children(|parent| {
+                            for recipe in building.0.get_resource_production() {
+                                let active = {
+                                    if let Some(resource_production) = resource_production {
+                                        recipe.input == resource_production.input
+                                            && recipe.output == resource_production.output
+                                            && recipe.timer.duration()
+                                                == resource_production.timer.duration()
+                                    } else {
+                                        false
+                                    }
+                                };
+
+                                let mut button = parent.spawn((
+                                    Node { 
+                                        width: Val::Percent(100.0), 
+                                        height: Val::Px(100.0), 
+                                        display: Display::Flex,
+                                        flex_direction: FlexDirection::Row,
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..Default::default() 
+                                    }, 
+                                    RecipeSwitchButton(recipe.clone()),
+                                    BackgroundColor(if active {
+                                            Color::srgba(0.0, 0.0, 0.0, 0.2)
+                                        } else {
+                                            Color::srgba(0.0, 0.0, 0.0, 0.7)
+                                        }),
+                                        BorderRadius::all(Val::Px(15.0)),
+
+                                        children![
+                                            (ImageNode::new(recipe.input.clone().unwrap().0.get_image(&image_assets)),),
+                                            (Text::new(format!("x{}", recipe.input.clone().unwrap().1))),
+
+                                            (Text::new("=>")),
+                                            (ImageNode::new(recipe.output.0.get_image(&image_assets)),),
+                                            (Text::new(format!("x{}", recipe.output.clone().1))),
+                                        ]
+                                    ),
+
+                                );
+                                button.observe(
+                                    move |mut trigger: Trigger<Pointer<Pressed>>,
+                                    mut backgrounds: Query<(&mut BackgroundColor, &RecipeSwitchButton)>,
+                                     mut buildings: Query<
+                                        &mut ResourceProduction,
+                                    >| {
+                                        let mut resource_production = buildings.get_mut(building_entity).unwrap();
+                                        *resource_production = recipe.clone();
+
+                                        for (mut button, RecipeSwitchButton(recipe)) in &mut backgrounds  {              
+                                            let active = {
+                                                recipe.input == resource_production.input
+                                                    && recipe.output == resource_production.output
+                                                    && recipe.timer.duration()
+                                                        == resource_production.timer.duration()
+                                            };
+
+                                            button.0 = if active {
+                                                Color::srgba(0.0, 0.0, 0.0, 0.2)
+                                            } else {
+                                                Color::srgba(0.0, 0.0, 0.0, 0.7)
+                                            };
+                                        }
+                                    },
+                                );
+                            }
+                        });
+                }
                 _ => {}
             }
         });
 }
+
+#[derive(Component)]
+struct RecipeSwitchButton(ResourceProduction);

@@ -6,6 +6,7 @@ use crate::{
     world_plugin::{CurrentStop, GenerateNextStop, NextStop, Stop},
 };
 
+mod fuel_display;
 mod train_speed_ui;
 
 #[derive(Resource, Default)]
@@ -61,43 +62,45 @@ fn reset_resources(
 }
 
 pub fn train_plugin(app: &mut App) {
-    app.insert_resource(TrainStats {
-        acceleration: 1.0,
-        max_velocity: 27.0,
-    })
-    .insert_resource(TrainLength(1))
-    .insert_resource(TrainFuel(1000.0))
-    .add_event::<AdvanceEvent>()
-    .add_event::<StopEvent>()
-    .add_event::<RunOutOfFuelEvent>()
-    .init_state::<TrainState>()
-    .add_systems(OnEnter(GameState::InGame), spawn_train)
-    .add_systems(OnEnter(GameState::MainMenu), reset_resources)
-    .add_systems(Update, update_train.run_if(resource_changed::<TrainLength>))
-    .add_systems(
-        Update,
-        handle_run_out_of_fuel.run_if(resource_changed::<TrainFuel>),
-    )
-    .init_resource::<MaxPixelHeightOfTrain>()
-    .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
-    .add_systems(
-        FixedPostUpdate,
-        train_speed_ui::update_train_speed.run_if(in_state(GameState::InGame)),
-    )
-    .add_systems(
-        FixedUpdate,
-        (
-            start_advancing.run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
-            move_train.run_if(
-                (in_state(TrainState::Advancing).or(in_state(TrainState::Arriving)))
-                    .and(in_state(GameState::InGame)),
+    app.add_plugins(fuel_display::fuel_display_plugin)
+        .insert_resource(TrainStats {
+            acceleration: 1.0,
+            max_velocity: 27.0,
+        })
+        .insert_resource(TrainLength(1))
+        .insert_resource(TrainFuel(1000.0))
+        .add_event::<AdvanceEvent>()
+        .add_event::<StopEvent>()
+        .add_event::<RunOutOfFuelEvent>()
+        .init_state::<TrainState>()
+        .add_systems(OnEnter(GameState::InGame), spawn_train)
+        .add_systems(OnEnter(GameState::MainMenu), reset_resources)
+        .add_systems(Update, update_train.run_if(resource_changed::<TrainLength>))
+        .add_systems(
+            Update,
+            handle_run_out_of_fuel.run_if(resource_changed::<TrainFuel>),
+        )
+        .init_resource::<MaxPixelHeightOfTrain>()
+        .add_systems(OnEnter(GameState::InGame), train_speed_ui::make_ui)
+        .add_systems(
+            FixedPostUpdate,
+            train_speed_ui::update_train_speed.run_if(in_state(GameState::InGame)),
+        )
+        .add_systems(
+            FixedUpdate,
+            (
+                start_advancing
+                    .run_if(in_state(TrainState::Stopped).and(in_state(GameState::InGame))),
+                move_train.run_if(
+                    (in_state(TrainState::Advancing).or(in_state(TrainState::Arriving)))
+                        .and(in_state(GameState::InGame)),
+                ),
             ),
-        ),
-    )
-    .add_systems(
-        FixedUpdate,
-        update_train_height.run_if(in_state(GameState::InGame)),
-    );
+        )
+        .add_systems(
+            FixedUpdate,
+            update_train_height.run_if(in_state(GameState::InGame)),
+        );
 }
 
 pub const CAR_SIZE: f32 = 144.0;

@@ -447,7 +447,7 @@ fn move_world_objects(
 struct Rail;
 
 const RAIL_WIDTH: f32 = 480.0 / METERS_PER_UNIT;
-const NUM_RAILS: usize = 8;
+const NUM_RAILS: usize = 10;
 
 fn spawn_rails(mut commands: Commands, image_assets: Res<ImageAssets>) {
     for i in 0..NUM_RAILS {

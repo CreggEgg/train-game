@@ -76,7 +76,6 @@ pub struct Contract {
 
 const REWARDS: &[(Item, usize)] = &[
     (Item::Food, 1),
-    (Item::Water, 1),
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),
@@ -88,7 +87,6 @@ const REWARDS: &[(Item, usize)] = &[
 ];
 const REQUIREMENTS: &[(Item, usize)] = &[
     (Item::Food, 1),
-    (Item::Water, 1),
     (Item::Wood, 1),
     (Item::Clay, 1),
     (Item::Brick, 1),

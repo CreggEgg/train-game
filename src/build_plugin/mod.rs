@@ -11,11 +11,12 @@ use bevy::{
 };
 use bird_plane::Roost;
 use building_menus::BuildingInspected;
+use synergies::Synergized;
 
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject,
     animations::Animation,
-    resources_plugin::{Inventory, Item},
+    resources_plugin::{Fluid, Inventory, Item},
     train_plugin::TrainState,
     ui_state::InMenu,
 };
@@ -28,8 +29,9 @@ use crate::{
 // }
 mod bird_plane;
 mod building_menus;
+pub mod synergies;
 
-#[derive(Resource, Clone, Copy)]
+#[derive(Resource, Clone, Copy, serde::Deserialize, Hash, PartialEq, Eq, Debug)]
 pub enum BuildingType {
     Housing,
     Farm,
@@ -39,6 +41,7 @@ pub enum BuildingType {
     Cannon,
     Workshop,
     Roost,
+    LiquidTank,
 }
 
 impl BuildingType {
@@ -65,7 +68,7 @@ impl BuildingType {
     fn iterator() -> impl Iterator<Item = Self> {
         use BuildingType::*;
         [
-            Housing, Farm, Storage, Sawmill, AlchemyLab, Cannon, Workshop, Roost,
+            Housing, Farm, Storage, Sawmill, AlchemyLab, Cannon, Workshop, Roost, LiquidTank,
         ]
         .into_iter()
     }
@@ -81,6 +84,7 @@ impl BuildingType {
             Cannon => "Cannon",
             Workshop => "Workshop",
             Roost => "Roost",
+            LiquidTank => "Liquid Tank",
         }
     }
 
@@ -114,6 +118,7 @@ impl BuildingType {
             Cannon => vec![],
             Workshop => vec![],
             Roost => vec![],
+            LiquidTank => vec![],
         }
     }
 }
@@ -134,6 +139,23 @@ pub struct ResourceProduction {
     pub input: Option<(Item, usize)>,
 }
 
+#[derive(Component)]
+pub struct LiquidTank {
+    pub contained_liters: f32,
+    pub max_liters: f32,
+    pub contained_fluid: Option<Fluid>,
+}
+
+impl Default for LiquidTank {
+    fn default() -> Self {
+        Self {
+            contained_liters: 0.,
+            max_liters: 1000.0,
+            contained_fluid: None,
+        }
+    }
+}
+
 fn reset_resources(mut building_type: ResMut<BuildingType>) {
     *building_type = BuildingType::Farm;
 }
@@ -145,6 +167,7 @@ pub fn build_plugin(app: &mut App) {
         .add_plugins((
             building_menus::building_menus_plugin,
             bird_plane::bird_plane_plugin,
+            synergies::synergies_plugin,
         ))
         .add_systems(OnEnter(GameState::MainMenu), reset_resources)
         .add_systems(
@@ -432,6 +455,9 @@ fn on_build(
             BuildingType::Storage => {
                 building.insert(Inventory::default());
             }
+            BuildingType::LiquidTank => {
+                building.insert(LiquidTank::default());
+            }
             BuildingType::Roost => {
                 building.insert(Roost::default());
             }
@@ -483,12 +509,12 @@ fn on_build(
 }
 
 fn produce_resources(
-    mut buildings: Query<&mut ResourceProduction>,
+    mut buildings: Query<(&mut ResourceProduction, Option<&Synergized>)>,
     mut inventories: Query<&mut Inventory>,
     time: Res<Time>,
 ) {
     let mut produced_items = HashMap::new();
-    for mut building in &mut buildings {
+    for (mut building, synergized) in &mut buildings {
         if building.timer.tick(time.delta()).just_finished() {
             if let Some(required) = &building.input {
                 let total_owned = {
@@ -504,7 +530,8 @@ fn produce_resources(
                     continue;
                 }
             }
-            *produced_items.entry(building.output.0.clone()).or_insert(0) += building.output.1;
+            *produced_items.entry(building.output.0.clone()).or_insert(0) +=
+                building.output.1 * if synergized.is_some() { 2 } else { 1 };
         }
     }
     for (item, amount) in produced_items {

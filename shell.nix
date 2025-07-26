@@ -12,6 +12,7 @@ mkShell rec {
     libxkbcommon wayland # To use the wayland feature
     clang
     mold
+    wasm-bindgen-cli
   ];
   shellHook = ''
     export LD_LIBRARY_PATH="${lib.makeLibraryPath buildInputs}";

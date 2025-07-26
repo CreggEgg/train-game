@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    Building, ResourceProduction,
+    Building, LiquidTank, ResourceProduction,
     bird_plane::{Roost, roost_menu},
 };
 
@@ -117,6 +117,7 @@ fn update_inspected_building(
         Option<&Inventory>,
         Option<&mut Roost>,
         Option<&ResourceProduction>,
+        Option<&LiquidTank>,
     )>,
     building_menu_slot: Single<Entity, With<BuildingMenuSlot>>,
     mut commands: Commands,
@@ -126,7 +127,7 @@ fn update_inspected_building(
     let Some(entity) = inspected_building.0 else {
         return;
     };
-    let Ok((building_entity, building, inventory, roost, resource_production)) =
+    let Ok((building_entity, building, inventory, roost, resource_production, liquid_tank)) =
         buildings.get_mut(entity)
     else {
         inspected_building.0 = None;
@@ -161,6 +162,17 @@ fn update_inspected_building(
                             TextFont::from_font(font_assets.default_font.clone()),
                         ));
                     }
+                }
+                super::BuildingType::LiquidTank => {
+                    let liquid_tank = liquid_tank.unwrap();
+                    parent.spawn((Text::new(format!("{}/{} L {}", 
+                        liquid_tank.contained_liters, 
+                        liquid_tank.max_liters, 
+                        if let Some(contained) = &liquid_tank.contained_fluid {
+                            contained.name()
+                        } else {
+                            ""
+                        })), TextColor::BLACK));
                 }
                 super::BuildingType::Roost => {
                     roost_menu(parent, &roost.unwrap(), building_entity);

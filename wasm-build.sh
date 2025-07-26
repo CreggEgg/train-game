@@ -1,10 +1,11 @@
 rm --r ./out/
-cargo build --release --target wasm32-unknown-unknown
+cargo build --release --target wasm32-unknown-unknown --features bevy/webgpu
 wasm-bindgen --no-typescript --target web \
     --out-dir ./out/ \
     --out-name "train-game" \
     ./target/wasm32-unknown-unknown/release/train-game.wasm
-cp -r ./assets/ ./out/
+mkdir out/assets/
+cp -r ./assets/*[^(\.blend)] ./out/
 echo "
 <!doctype html>
 <html lang=\"en\" style=\"height: 100%; width: 100%;\">

@@ -7,7 +7,6 @@ use crate::ImageAssets;
 #[derive(Eq, PartialEq, Hash, Clone, Debug)]
 pub enum Item {
     Food,
-    Water,
     Wood,
     Clay,
     Brick,
@@ -21,7 +20,6 @@ impl Item {
     pub(crate) fn name(&self) -> &'static str {
         match self {
             Item::Food => "Food",
-            Item::Water => "Water",
             Item::Wood => "Wood",
             Item::Clay => "Clay",
             Item::Brick => "Brick",
@@ -39,6 +37,21 @@ impl Item {
             Item::Wood => image_assets.item_wood.clone(),
             Item::Stone => image_assets.item_stone.clone(),
             _ => image_assets.item_metal.clone(),
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+pub enum Fluid {
+    Water,
+    Fuel,
+}
+
+impl Fluid {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Fluid::Water => "Water",
+            Fluid::Fuel => "Fuel",
         }
     }
 }

@@ -1,9 +1,11 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowMode};
 use bevy_asset_loader::{
     asset_collection::AssetCollection,
     loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
 };
+use bevy_common_assets::ron::RonAssetPlugin;
+use build_plugin::synergies::Synergies;
 use ui_state::InMenu;
 
 mod animations;
@@ -13,6 +15,7 @@ mod control_panel_plugin;
 mod debug_plugin;
 mod goblins;
 mod main_menu;
+#[cfg(not(target_family = "wasm"))]
 mod particles_plugin;
 mod resources_plugin;
 mod train_plugin;
@@ -229,6 +232,12 @@ struct ImageAssets {
 }
 
 #[derive(AssetCollection, Resource)]
+struct ConfigurationAssets {
+    #[asset(path = "configuration/synergies.synergies.ron")]
+    synergies: Handle<Synergies>,
+}
+
+#[derive(AssetCollection, Resource)]
 struct FontAssets {
     #[asset(path = "fonts/OldLondon.ttf")]
     town_title_font: Handle<Font>,
@@ -251,12 +260,17 @@ fn reset_states(
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(
+    app.add_plugins((
         DefaultPlugins
             .set(ImagePlugin::default_nearest())
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     fit_canvas_to_parent: true,
+                    mode: WindowMode::Fullscreen(
+                        MonitorSelection::Primary,
+                        VideoModeSelection::Current,
+                    ),
+
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -265,7 +279,8 @@ fn main() {
                 meta_check: bevy::asset::AssetMetaCheck::Never,
                 ..Default::default()
             }),
-    )
+        RonAssetPlugin::<Synergies>::new(&["synergies.ron"]),
+    ))
     .add_plugins((
         train_plugin::train_plugin,
         camera_plugin::camera_plugin,
@@ -274,6 +289,7 @@ fn main() {
         build_plugin::build_plugin,
         main_menu::main_menu_plugin,
         resources_plugin::resources_plugin,
+        #[cfg(not(target_family = "wasm"))]
         particles_plugin::particles_plugin,
         animations::animations_plugin,
     ))
@@ -284,7 +300,8 @@ fn main() {
         LoadingState::new(GameState::Loading)
             .continue_to_state(GameState::InGame)
             .load_collection::<ImageAssets>()
-            .load_collection::<FontAssets>(),
+            .load_collection::<FontAssets>()
+            .load_collection::<ConfigurationAssets>(),
     )
     .add_systems(OnEnter(GameState::MainMenu), reset_states);
     #[cfg(debug_assertions)]

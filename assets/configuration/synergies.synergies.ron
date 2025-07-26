@@ -1,0 +1,7 @@
+Synergies([
+	Synergy(
+		above: None,
+		building: AlchemyLab,
+		below: Some(LiquidTank)
+	)
+])

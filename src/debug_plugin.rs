@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::{
     GameState,
-    build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING},
+    build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING, synergies::Synergized},
     goblins::Goblin,
     resources_plugin::Item,
     world_plugin::stop_plugin::{ActiveContracts, Contract},
@@ -16,7 +16,7 @@ const BUILD_LOCATION_GIZMO: bool = false;
 const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;
 const START_WITH_CONTRACT: bool = true;
-// const START_WITH_MONEY: bool = true;
+const SYNERGY_VISUALIZATION: bool = true; // const START_WITH_MONEY: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -33,6 +33,9 @@ pub fn debug_plugin(app: &mut App) {
     }
     if START_WITH_CONTRACT {
         app.add_systems(OnEnter(GameState::InGame), give_debug_contract);
+    }
+    if SYNERGY_VISUALIZATION {
+        app.add_systems(Update, synergy_gizmo);
     }
     // if START_WITH_MONEY {
     //     app.add_systems(OnEnter(GameState::InGame), give_debug_money);
@@ -98,6 +101,16 @@ fn give_debug_contract(mut contracts: ResMut<ActiveContracts>) {
         reward: (Item::Food, 5),
         stop_number: 1,
     });
+}
+
+fn synergy_gizmo(mut gizmos: Gizmos, synergies: Query<&GlobalTransform, With<Synergized>>) {
+    for parent_transform in &synergies {
+        gizmos.circle_2d(
+            parent_transform.translation().xy() + Vec2::new(0., 40.0),
+            5.0,
+            Color::srgb(0.0, 1., 0.),
+        );
+    }
 }
 
 // fn give_debug_money(mut inventories: Query<&mut Inventory>) {}

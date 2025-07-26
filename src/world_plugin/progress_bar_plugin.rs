@@ -187,6 +187,23 @@ fn update_progress_bar(
             }
         }
     }
+
+    if anim_timer.time > 2.0 {
+        for mut map_pin in &mut map_pin_query {
+            if map_pin.1.right {
+                map_pin.0.width = Val::Px(512.0 * 0.08);
+                map_pin.0.height = Val::Px(512.0 * 0.08);
+                map_pin.0.bottom = Val::Percent(47.0);
+                map_pin.0.right = Val::Px(MAP_PIN_OFFSET_RIGHT);
+            }
+            else {
+                map_pin.0.width = Val::Px(512.0 * 0.08);
+                map_pin.0.height = Val::Px(512.0 * 0.08);
+                map_pin.0.bottom = Val::Percent(47.0);
+                map_pin.0.right = Val::Px(bar_width + MAP_PIN_OFFSET_LEFT);
+            }
+        }
+    }
 }
 
 fn start_anim_timer(mut anim_timer: ResMut<AnimTimer>, current_stop: Res<CurrentStop>, window_query: Query<&Window>) {

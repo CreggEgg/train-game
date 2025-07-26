@@ -1,5 +1,5 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
-use bevy::{prelude::*, window::WindowMode};
+use bevy::{prelude::*, window::{WindowMode, WindowResolution}};
 use bevy_asset_loader::{
     asset_collection::AssetCollection,
     loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
@@ -270,7 +270,9 @@ fn main() {
                         MonitorSelection::Primary,
                         VideoModeSelection::Current,
                     ),
-
+                    // mode: WindowMode::Windowed,
+                    // resizable: true,
+                    // resolution: WindowResolution::new(1280., 720.),
                     ..Default::default()
                 }),
                 ..Default::default()

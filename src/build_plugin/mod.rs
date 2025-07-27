@@ -42,6 +42,7 @@ pub enum BuildingType {
     Workshop,
     Roost,
     LiquidTank,
+    Factory,
 }
 
 impl BuildingType {
@@ -85,6 +86,7 @@ impl BuildingType {
             Workshop => "Workshop",
             Roost => "Roost",
             LiquidTank => "Liquid Tank",
+            Factory => "Factory",
         }
     }
 
@@ -119,6 +121,7 @@ impl BuildingType {
             Workshop => vec![],
             Roost => vec![],
             LiquidTank => vec![],
+            Factory => vec![],
         }
     }
 }

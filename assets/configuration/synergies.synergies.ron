@@ -3,5 +3,25 @@ Synergies([
 		above: None,
 		building: AlchemyLab,
 		below: Some(LiquidTank)
+	),
+	Synergy(
+		above: None,
+		building: Cannon,
+		below: Some(Factory)
+	),
+	Synergy(
+		above: None,
+		building: Farm,
+		below: Some(LiquidTank)
+	),
+	Synergy(
+		above: None,
+		building: Sawmill,
+		below: Some(LiquidTank)
+	),
+	Synergy(
+		above: None,
+		building: Factory,
+		below: Some(Sawmill)
 	)
 ])

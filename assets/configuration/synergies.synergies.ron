@@ -1,27 +1,27 @@
 Synergies([
 	Synergy(
-		above: None,
+		above: [],
 		building: AlchemyLab,
-		below: Some(LiquidTank)
+		below: [IsType(LiquidTank), ContainsFluid(AlchemyJuice)]
 	),
 	Synergy(
-		above: None,
+		above: [],
 		building: Cannon,
-		below: Some(Factory)
+		below: [IsType(Factory)]
 	),
 	Synergy(
-		above: None,
+		above: [],
 		building: Farm,
-		below: Some(LiquidTank)
+		below: [IsType(LiquidTank), ContainsFluid(Water)]
 	),
 	Synergy(
-		above: None,
+		above: [],
 		building: Sawmill,
-		below: Some(LiquidTank)
+		below: [IsType(LiquidTank), ContainsFluid(Water)]
 	),
 	Synergy(
-		above: None,
+		above: [],
 		building: Factory,
-		below: Some(Sawmill)
+		below: [IsType(Sawmill)]
 	)
 ])

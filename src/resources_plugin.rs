@@ -41,9 +41,10 @@ impl Item {
     }
 }
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, serde::Deserialize)]
 pub enum Fluid {
     Water,
+    AlchemyJuice,
     Fuel,
 }
 
@@ -52,6 +53,7 @@ impl Fluid {
         match self {
             Fluid::Water => "Water",
             Fluid::Fuel => "Fuel",
+            Fluid::AlchemyJuice => "Alchemy Juice",
         }
     }
 }

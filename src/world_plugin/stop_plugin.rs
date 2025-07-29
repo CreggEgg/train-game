@@ -307,6 +307,12 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                 });
             parent.spawn((
                 Node {
+                    ..Default::default()
+                },
+                children![(Text::new("shop menu"), TextColor::BLACK)],
+            ));
+            parent.spawn((
+                Node {
                     width: Val::Px(160.0),
                     height: Val::Px(20.0),
                     ..Default::default()

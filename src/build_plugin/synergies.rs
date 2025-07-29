@@ -73,7 +73,7 @@ fn update_synergies(
             valid_synergies.iter().any(|valid_synergy| {
                 let is_below_correct = actual_below
                     .map(|(_, _, _, Building(it), _, liquid_tank)| {
-                        valid_synergy.above.iter().all(|predicate| match predicate {
+                        valid_synergy.below.iter().all(|predicate| match predicate {
                             SynergyPredicate::IsType(building_type) => building_type == it,
                             SynergyPredicate::ContainsFluid(fluid) => {
                                 liquid_tank.and_then(|it| it.contained_fluid.clone())

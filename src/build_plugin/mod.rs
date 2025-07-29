@@ -45,6 +45,9 @@ pub enum BuildingType {
     Factory,
 }
 
+#[derive(Resource)]
+pub struct UnlockedBuildings(pub Vec<BuildingType>);
+
 impl BuildingType {
     fn get_texture(&self, image_assets: &ImageAssets) -> Handle<Image> {
         match self {
@@ -165,6 +168,7 @@ fn reset_resources(mut building_type: ResMut<BuildingType>) {
 
 pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
+        .insert_resource(UnlockedBuildings(vec![BuildingType::Farm]))
         .insert_resource(BuildingType::Farm)
         .add_event::<BuildEvent>()
         .add_plugins((
@@ -211,10 +215,19 @@ pub fn build_plugin(app: &mut App) {
                 }
             },
         )
-        .add_systems(FixedUpdate, on_build.run_if(in_state(InMenu::BuildMenu)))
+        .add_systems(
+            FixedUpdate,
+            (
+                on_build.run_if(in_state(InMenu::BuildMenu)),
+                update_build_menu.run_if(resource_changed::<UnlockedBuildings>),
+            ),
+        )
         .add_systems(
             OnEnter(GameState::InGame),
-            (spawn_ghost, spawn_blueprint_window),
+            (
+                spawn_ghost,
+                (spawn_blueprint_window, update_build_menu).chain(),
+            ),
         )
         .add_systems(
             FixedUpdate,
@@ -252,98 +265,115 @@ fn update_ghost(
 #[derive(Component)]
 struct BluePrintButton(BuildingType);
 
+#[derive(Component)]
+struct BuildMenu;
+
 fn spawn_blueprint_window(
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    unlocked_buildings: Res<UnlockedBuildings>,
 ) {
     let texture_atlas =
         TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     let texture_atlas = TextureAtlas::from(texture_atlas_handle);
-    commands
-        .spawn((
-            MainGameObject,
-            Visibility::Hidden,
-            BuildMenuItem,
-            Node {
-                top: Val::Vh(5.0),
-                // height: Val::Percent(100.0),
-                bottom: Val::Px(0.0),
-                right: Val::Px(0.),
-                display: Display::Flex,
-                position_type: PositionType::Absolute,
-                // justify_content: JustifyContent::End,
-                // align_items: AlignItems::FlexEnd,
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(10.0)),
-                margin: UiRect::top(Val::Px(10.0)),
+    commands.spawn((
+        MainGameObject,
+        Visibility::Hidden,
+        BuildMenuItem,
+        BuildMenu,
+        Node {
+            top: Val::Vh(5.0),
+            // height: Val::Percent(100.0),
+            bottom: Val::Px(0.0),
+            right: Val::Px(0.),
+            display: Display::Flex,
+            position_type: PositionType::Absolute,
+            // justify_content: JustifyContent::End,
+            // align_items: AlignItems::FlexEnd,
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::all(Val::Px(10.0)),
+            margin: UiRect::top(Val::Px(10.0)),
 
-                align_self: AlignSelf::Stretch,
+            align_self: AlignSelf::Stretch,
 
-                overflow: Overflow::scroll_y(),
-                ..Default::default()
-            },
-        ))
-        .with_children(|parent| {
-            for building_type in BuildingType::iterator() {
-                parent.spawn((
-                    Node {
-                        width: Val::Px(142.0),
-                        display: Display::Flex,
-                        flex_direction: FlexDirection::Column,
-                        justify_content: JustifyContent::Center,
-                        ..Default::default()
-                    },
-                    Pickable {
-                        should_block_lower: false,
-                        ..default()
-                    },
-                    children![
-                        (
-                            ImageNode::from_atlas_image(
-                                building_type.get_texture(&image_assets),
-                                texture_atlas.clone(),
-                            ),
-                            Node {
-                                width: Val::Px(142.0),
-                                height: Val::Px(142.0),
-                                bottom: Val::Px(0.0),
+            overflow: Overflow::scroll_y(),
+            ..Default::default()
+        },
+    ));
+}
 
-                                ..Default::default()
-                            },
-                            BluePrintButton(building_type),
-                            Button,
+fn update_build_menu(
+    menu: Single<Entity, With<BuildMenu>>,
+    mut commands: Commands,
+    image_assets: Res<ImageAssets>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    unlocked_buildings: Res<UnlockedBuildings>,
+) {
+    let texture_atlas =
+        TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas = TextureAtlas::from(texture_atlas_handle);
+    commands.entity(*menu).with_children(|parent| {
+        for building_type in &unlocked_buildings.0 {
+            parent.spawn((
+                Node {
+                    width: Val::Px(142.0),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::Center,
+                    ..Default::default()
+                },
+                Pickable {
+                    should_block_lower: false,
+                    ..default()
+                },
+                children![
+                    (
+                        ImageNode::from_atlas_image(
+                            building_type.get_texture(&image_assets),
+                            texture_atlas.clone(),
+                        ),
+                        Node {
+                            width: Val::Px(142.0),
+                            height: Val::Px(142.0),
+                            bottom: Val::Px(0.0),
+
+                            ..Default::default()
+                        },
+                        BluePrintButton(building_type.clone()),
+                        Button,
+                        Pickable {
+                            should_block_lower: false,
+                            ..default()
+                        },
+                    ),
+                    (
+                        Node {
+                            width: Val::Percent(100.0),
+                            display: Display::Flex,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+
+                            ..default()
+                        },
+                        children![(
+                            Text::new(building_type.name()),
                             Pickable {
                                 should_block_lower: false,
                                 ..default()
                             },
-                        ),
-                        (
-                            Node {
-                                width: Val::Percent(100.0),
-                                display: Display::Flex,
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-
-                                ..default()
-                            },
-                            children![(
-                                Text::new(building_type.name()),
-                                Pickable {
-                                    should_block_lower: false,
-                                    ..default()
-                                },
-                            )],
-                            Pickable {
-                                should_block_lower: false,
-                                ..default()
-                            },
-                        ),
-                    ],
-                ));
-            }
-        });
+                        )],
+                        Pickable {
+                            should_block_lower: false,
+                            ..default()
+                        },
+                    ),
+                ],
+            ));
+        }
+    });
 }
 
 fn change_selected_building(

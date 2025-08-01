@@ -344,7 +344,7 @@ fn spawn_stop_menu(
                                 children![
                                     (
                                         Name::new("Blueprint Text"),
-                                        Text::new(building_type.name()),
+                                        Text::new(format!("{} - ${}", building_type.name(), building_type.get_blueprint_cost())),
                                         TextColor::BLACK,
                                         BackgroundColor(Color::srgb_from_array(world.rng.random())),
                                     ),

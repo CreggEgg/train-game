@@ -86,14 +86,18 @@ pub fn resources_plugin(_app: &mut App) {
 }
 
 #[macro_export]
-macro_rules! evaluate_purchase {
+macro_rules! consume_resource {
     ($cost:expr, $inventories:ident, $on_fail:block, $on_success:block) => {{
+        use crate::resources_plugin::Item;
+        consume_resource!(Item::Money, $cost, $inventories, $on_fail, $on_success);
+    }};
+    ($item:expr, $cost:expr, $inventories:ident, $on_fail:block, $on_success:block) => {{
         let cost = $cost;
 
         let total_owned = {
             let mut total = 0;
             for mut inventory in &mut $inventories {
-                let amount = inventory.items.entry(Item::Money).or_insert(0);
+                let amount = inventory.items.entry($item).or_insert(0);
                 total += *amount;
                 if total >= cost {
                     break;
@@ -108,7 +112,7 @@ macro_rules! evaluate_purchase {
             {
                 let mut cost = cost;
                 for mut inventory in &mut $inventories {
-                    let amount = inventory.items.entry(Item::Money).or_insert(0);
+                    let amount = inventory.items.entry($item).or_insert(0);
                     if *amount >= cost {
                         *amount -= cost;
                         break;

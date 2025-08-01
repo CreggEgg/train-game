@@ -16,6 +16,7 @@ use synergies::Synergized;
 use crate::{
     GameState, ImageAssets, InGameState, MainGameObject,
     animations::Animation,
+    consume_resource,
     resources_plugin::{Fluid, Inventory, Item},
     train_plugin::TrainState,
     ui_state::InMenu,
@@ -572,18 +573,16 @@ fn produce_resources(
     for (mut building, synergized) in &mut buildings {
         if building.timer.tick(time.delta()).just_finished() {
             if let Some(required) = &building.input {
-                let total_owned = {
-                    let mut total = 0;
-                    for mut inventory in &mut inventories {
-                        total += *inventory.items.entry(required.0.clone()).or_insert(0);
-                    }
-                    total
-                };
-                let required = required.1;
-                if total_owned < required {
-                    info!("Failed to produce output");
-                    continue;
-                }
+                consume_resource!(
+                    required.0.clone(),
+                    required.1,
+                    inventories,
+                    {
+                        info!("Failed to produce output");
+                        continue;
+                    },
+                    {}
+                );
             }
             *produced_items.entry(building.output.0.clone()).or_insert(0) +=
                 building.output.1 * if synergized.is_some() { 2 } else { 1 };

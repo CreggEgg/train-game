@@ -7,8 +7,8 @@ use rand_chacha::ChaCha8Rng;
 use crate::{
     FontAssets, GameState, ImageAssets, InGameState, MainGameObject,
     build_plugin::{BuildingTextureAtlas, BuildingType, UnlockedBuildings},
+    consume_resource,
     control_panel_plugin::AdvanceBlocker,
-    evaluate_purchase,
     resources_plugin::{Inventory, Item},
     train_plugin::{TrainFuel, TrainLength, TrainState},
     ui_state::InMenu,
@@ -240,7 +240,7 @@ fn spawn_stop_menu(
                      mut train_length: ResMut<TrainLength>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
-                        evaluate_purchase!(
+                        consume_resource!(
                             1000,
                             inventories,
                             {
@@ -270,7 +270,7 @@ fn spawn_stop_menu(
                      mut train_fuel: ResMut<TrainFuel>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
-                        evaluate_purchase!(
+                        consume_resource!(
                             100,
                             inventories,
                             {
@@ -374,7 +374,7 @@ fn spawn_stop_menu(
                                     // commands.entity(trigger.target()).log_components();
 
                                     // println!("{}", blueprint_items.get(trigger.target()).unwrap());
-                                    evaluate_purchase!(building_cost, inventories, {
+                                    consume_resource!(building_cost, inventories, {
                                         ev.write(PurchaseEvent::FailedPurchase);
                                     }, {
                                         blueprint_items.get_mut(trigger.target()).unwrap().0 = true;
@@ -672,38 +672,25 @@ fn evaluate_contracts(
     for i in contracts_to_check {
         let contract = &contracts.0[i];
         to_remove.push(i);
-        let total_owned = {
-            let mut total = 0;
-            for mut inventory in &mut inventories {
-                total += *inventory
-                    .items
-                    .entry(contract.required.0.clone())
-                    .or_insert(0);
+        consume_resource!(
+            contract.required.0.clone(),
+            contract.required.1,
+            inventories,
+            {
+                info!("Failed contract");
+                continue;
+            },
+            {
+                for mut inventory in &mut inventories {
+                    *inventory
+                        .items
+                        .entry(contract.reward.0.clone())
+                        .or_insert(0) += contract.reward.1;
+                    break;
+                }
+                info!("Succeeded contract");
             }
-            total
-        };
-        let required = contract.required.1;
-        if total_owned < required {
-            info!("Failed contract");
-            continue;
-        }
-        for mut inventory in &mut inventories {
-            let owned = inventory
-                .items
-                .entry(contract.required.0.clone())
-                .or_insert(0);
-            let actual_given = (*owned).min(required);
-            *owned -= actual_given;
-        }
-
-        for mut inventory in &mut inventories {
-            *inventory
-                .items
-                .entry(contract.reward.0.clone())
-                .or_insert(0) += contract.reward.1;
-            break;
-        }
-        info!("Succeeded contract");
+        );
     }
     for i in to_remove {
         contracts.0.remove(i);

@@ -49,7 +49,7 @@ pub enum BuildingType {
 pub struct UnlockedBuildings(pub Vec<BuildingType>);
 
 impl BuildingType {
-    fn get_texture(&self, image_assets: &ImageAssets) -> Handle<Image> {
+    pub fn get_texture(&self, image_assets: &ImageAssets) -> Handle<Image> {
         match self {
             BuildingType::Housing => image_assets.housing.clone(),
             BuildingType::Farm => image_assets.farm.clone(),
@@ -60,7 +60,7 @@ impl BuildingType {
             _ => image_assets.debug_building.clone(),
         }
     }
-    fn get_build_locations(&self) -> Vec<Vec2> {
+    pub fn get_build_locations(&self) -> Vec<Vec2> {
         match self {
             BuildingType::Farm => vec![],
             BuildingType::Workshop => vec![],
@@ -69,7 +69,7 @@ impl BuildingType {
         }
     }
 
-    fn iterator() -> impl Iterator<Item = Self> {
+    pub fn iterator() -> impl Iterator<Item = Self> {
         use BuildingType::*;
         [
             Housing, Farm, Storage, Sawmill, AlchemyLab, Cannon, Workshop, Roost, LiquidTank,
@@ -77,7 +77,7 @@ impl BuildingType {
         .into_iter()
     }
 
-    fn name(&self) -> &'static str {
+    pub fn name(&self) -> &'static str {
         use BuildingType::*;
         match self {
             Housing => "Housing",
@@ -125,6 +125,22 @@ impl BuildingType {
             Roost => vec![],
             LiquidTank => vec![],
             Factory => vec![],
+        }
+    }
+
+    pub(crate) fn get_blueprint_cost(&self) -> usize {
+        use BuildingType::*;
+        match self {
+            Housing => 100,
+            Farm => 50,
+            Storage => 100,
+            Sawmill => 100,
+            AlchemyLab => 200,
+            Cannon => 100,
+            Workshop => 500,
+            Roost => 500,
+            LiquidTank => 100,
+            Factory => 150,
         }
     }
 }
@@ -236,7 +252,22 @@ pub fn build_plugin(app: &mut App) {
                     .and(in_state(InGameState::Running))
                     .and(in_state(TrainState::Advancing)),
             ),
-        );
+        )
+        .add_systems(Startup, building_texture_atlas);
+}
+
+#[derive(Resource)]
+pub struct BuildingTextureAtlas(pub TextureAtlas);
+
+fn building_texture_atlas(
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    mut commands: Commands,
+) {
+    let texture_atlas =
+        TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas = TextureAtlas::from(texture_atlas_handle);
+    commands.insert_resource(BuildingTextureAtlas(texture_atlas));
 }
 
 #[derive(Component)]
@@ -271,13 +302,8 @@ struct BuildMenu;
 fn spawn_blueprint_window(
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
-    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     unlocked_buildings: Res<UnlockedBuildings>,
 ) {
-    let texture_atlas =
-        TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    let texture_atlas = TextureAtlas::from(texture_atlas_handle);
     commands.spawn((
         MainGameObject,
         Visibility::Hidden,
@@ -308,13 +334,9 @@ fn update_build_menu(
     menu: Single<Entity, With<BuildMenu>>,
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
-    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    building_texture_atlas: Res<BuildingTextureAtlas>,
     unlocked_buildings: Res<UnlockedBuildings>,
 ) {
-    let texture_atlas =
-        TextureAtlasLayout::from_grid(UVec2::splat(80), 1, 1, None, Some(UVec2::new(200, 60)));
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    let texture_atlas = TextureAtlas::from(texture_atlas_handle);
     commands.entity(*menu).with_children(|parent| {
         for building_type in &unlocked_buildings.0 {
             parent.spawn((
@@ -333,7 +355,7 @@ fn update_build_menu(
                     (
                         ImageNode::from_atlas_image(
                             building_type.get_texture(&image_assets),
-                            texture_atlas.clone(),
+                            building_texture_atlas.0.clone(),
                         ),
                         Node {
                             width: Val::Px(142.0),

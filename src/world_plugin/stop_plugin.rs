@@ -1,11 +1,14 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
+use bevy::{ecs::error::info, prelude::*};
 use rand::{Rng, seq::IndexedRandom};
+use rand_chacha::ChaCha8Rng;
 
 use crate::{
     FontAssets, GameState, ImageAssets, InGameState, MainGameObject,
+    build_plugin::{BuildingTextureAtlas, BuildingType, UnlockedBuildings},
     control_panel_plugin::AdvanceBlocker,
+    evaluate_purchase,
     resources_plugin::{Inventory, Item},
     train_plugin::{TrainFuel, TrainLength, TrainState},
     ui_state::InMenu,
@@ -200,7 +203,13 @@ enum PurchaseEvent {
     FailedPurchase,
 }
 
-fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
+fn spawn_stop_menu(
+    mut commands: Commands,
+    mut world: ResMut<GameWorld>,
+    image_assets: Res<ImageAssets>,
+    unlocked_buildings: Res<UnlockedBuildings>,
+    building_texture_atlas: Res<BuildingTextureAtlas>,
+) {
     commands
         .spawn((
             MainGameObject,
@@ -231,21 +240,18 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                      mut train_length: ResMut<TrainLength>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
-                        let cost = 1000;
-
-                        let total_owned = {
-                            let mut total = 0;
-                            for mut inventory in &mut inventories {
-                                total += *inventory.items.entry(Item::Money).or_insert(0);
+                        evaluate_purchase!(
+                            1000,
+                            inventories,
+                            {
+                                ev.write(PurchaseEvent::FailedPurchase);
+                                return;
+                            },
+                            {
+                                train_length.0 += 1;
+                                ev.write(PurchaseEvent::SuccessfulPurchase);
                             }
-                            total
-                        };
-                        if total_owned < cost {
-                            ev.write(PurchaseEvent::FailedPurchase);
-                            return;
-                        }
-                        train_length.0 += 1;
-                        ev.write(PurchaseEvent::SuccessfulPurchase);
+                        )
                     },
                 );
             parent
@@ -264,21 +270,18 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                      mut train_fuel: ResMut<TrainFuel>,
                      mut inventories: Query<&mut Inventory>,
                      mut ev: EventWriter<PurchaseEvent>| {
-                        let cost = 100;
-
-                        let total_owned = {
-                            let mut total = 0;
-                            for mut inventory in &mut inventories {
-                                total += *inventory.items.entry(Item::Money).or_insert(0);
+                        evaluate_purchase!(
+                            100,
+                            inventories,
+                            {
+                                ev.write(PurchaseEvent::FailedPurchase);
+                                return;
+                            },
+                            {
+                                train_fuel.0 += 100.0;
+                                ev.write(PurchaseEvent::SuccessfulPurchase);
                             }
-                            total
-                        };
-                        if total_owned < cost {
-                            ev.write(PurchaseEvent::FailedPurchase);
-                            return;
-                        }
-                        train_fuel.0 += 100.0;
-                        ev.write(PurchaseEvent::SuccessfulPurchase);
+                        )
                     },
                 );
             parent
@@ -305,12 +308,90 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
                         ));
                     }
                 });
-            parent.spawn((
-                Node {
-                    ..Default::default()
-                },
-                children![(Text::new("shop menu"), TextColor::BLACK)],
-            ));
+            parent
+                .spawn((
+                    Node {
+                        display: Display::Grid,
+                        width: Val::Px(CONTRACT_WIDTH * 6.),
+                        aspect_ratio: Some(1.7),
+
+                        grid_template_columns: RepeatedGridTrack::flex(4, 1.0),
+                        row_gap: Val::Px(0.0),
+                        column_gap: Val::Px(0.0),
+                        // Set the grid to have 4 rows all with sizes minmax(0, 1fr)
+                        // This creates 4 exactly evenly sized rows
+                        ..Default::default()
+                    },
+                    Name::new("Blueprints menu"),
+                    BackgroundColor(Color::WHITE),
+                ))
+                .with_children(|parent| {
+                    for building_type in BuildingType::iterator() {
+                        if unlocked_buildings.0.contains(&building_type) {
+                            continue;
+                        }
+                        let building_cost = building_type.get_blueprint_cost();
+
+                        parent
+                            .spawn((
+                                Node {
+                                    display: Display::Flex,
+                                    flex_direction: FlexDirection::Column,
+                                    ..Default::default()
+                                },
+                                Name::new("Blueprint Toplevel"),
+                                BlueprintPurchased(false),
+                                children![
+                                    (
+                                        Name::new("Blueprint Text"),
+                                        Text::new(building_type.name()),
+                                        TextColor::BLACK,
+                                        BackgroundColor(Color::srgb_from_array(world.rng.random())),
+                                    ),
+                                    (
+                                        Node {
+                                            aspect_ratio: Some(1.0),
+                                            width: Val::Percent(100.0),
+                                            ..Default::default()
+                                        },
+                                        Name::new("Blueprint Image"),
+                                        BackgroundColor(Color::srgb_from_array(world.rng.random())),
+                                        ImageNode::from_atlas_image(
+                                            building_type.get_texture(&image_assets),
+                                            building_texture_atlas.0.clone()
+                                        )
+                                    )
+                                ],
+                            ))
+                            .observe(
+                                move |mut trigger: Trigger<Pointer<Pressed>>,
+                                      mut commands: Commands,
+                                      mut blueprint_items: Query<&mut BlueprintPurchased>,
+                                      mut inventories: Query<&mut Inventory>,
+                                      mut ev: EventWriter<PurchaseEvent>| {
+                                    trigger.propagate(false);
+
+                                    // commands.entity(trigger.target()).log_components();
+
+                                    // println!("{}", blueprint_items.get(trigger.target()).unwrap());
+                                    evaluate_purchase!(building_cost, inventories, {
+                                        ev.write(PurchaseEvent::FailedPurchase);
+                                    }, {
+                                        blueprint_items.get_mut(trigger.target()).unwrap().0 = true;
+                                        commands
+                                            .entity(trigger.target())
+                                            .despawn_related::<Children>();
+                                        commands.entity(trigger.target()).despawn();
+                                        ev.write(PurchaseEvent::SuccessfulPurchase);
+                                    })
+
+                                    //
+                                    // println!("{}", trigger.observer());
+                                    // println!("{}", trigger.event().target);
+                                },
+                            );
+                    }
+                });
             parent.spawn((
                 Node {
                     width: Val::Px(160.0),
@@ -324,6 +405,9 @@ fn spawn_stop_menu(mut commands: Commands, image_assets: Res<ImageAssets>) {
             ));
         });
 }
+
+#[derive(Component)]
+struct BlueprintPurchased(bool);
 
 #[derive(Component)]
 struct ContractDisplay;

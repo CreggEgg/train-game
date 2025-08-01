@@ -84,3 +84,41 @@ impl Inventory {
 pub fn resources_plugin(_app: &mut App) {
     // app;
 }
+
+#[macro_export]
+macro_rules! evaluate_purchase {
+    ($cost:expr, $inventories:ident, $on_fail:block, $on_success:block) => {{
+        let cost = $cost;
+
+        let total_owned = {
+            let mut total = 0;
+            for mut inventory in &mut $inventories {
+                let amount = inventory.items.entry(Item::Money).or_insert(0);
+                total += *amount;
+                if total >= cost {
+                    break;
+                }
+            }
+            total
+        };
+
+        if total_owned < cost {
+            $on_fail
+        } else {
+            {
+                let mut cost = cost;
+                for mut inventory in &mut $inventories {
+                    let amount = inventory.items.entry(Item::Money).or_insert(0);
+                    if *amount >= cost {
+                        *amount -= cost;
+                        break;
+                    } else {
+                        cost -= *amount;
+                        *amount = 0;
+                    }
+                }
+            }
+            $on_success
+        }
+    }};
+}

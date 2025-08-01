@@ -7,6 +7,7 @@ use crate::{
     build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING, synergies::Synergized},
     goblins::Goblin,
     resources_plugin::Item,
+    train_plugin::TrainStats,
     world_plugin::stop_plugin::{ActiveContracts, Contract},
 };
 
@@ -17,6 +18,7 @@ const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;
 const START_WITH_CONTRACT: bool = true;
 const SYNERGY_VISUALIZATION: bool = true; // const START_WITH_MONEY: bool = true;
+const INFINITE_TRAIN_SPEED: bool = true; // const START_WITH_MONEY: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -36,6 +38,12 @@ pub fn debug_plugin(app: &mut App) {
     }
     if SYNERGY_VISUALIZATION {
         app.add_systems(Update, synergy_gizmo);
+    }
+    if INFINITE_TRAIN_SPEED {
+        app.add_systems(
+            Update,
+            set_train_speed.run_if(resource_exists::<TrainStats>),
+        );
     }
     // if START_WITH_MONEY {
     //     app.add_systems(OnEnter(GameState::InGame), give_debug_money);
@@ -114,3 +122,7 @@ fn synergy_gizmo(mut gizmos: Gizmos, synergies: Query<&GlobalTransform, With<Syn
 }
 
 // fn give_debug_money(mut inventories: Query<&mut Inventory>) {}
+//
+fn set_train_speed(mut train_stats: ResMut<TrainStats>) {
+    train_stats.acceleration = f32::MAX;
+}

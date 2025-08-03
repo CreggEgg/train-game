@@ -185,7 +185,10 @@ fn reset_resources(mut building_type: ResMut<BuildingType>) {
 
 pub fn build_plugin(app: &mut App) {
     app //.init_state::<BuildState>()
-        .insert_resource(UnlockedBuildings(vec![BuildingType::Farm]))
+        .insert_resource(UnlockedBuildings(vec![
+            BuildingType::Farm,
+            BuildingType::Storage,
+        ]))
         .insert_resource(BuildingType::Farm)
         .add_event::<BuildEvent>()
         .add_plugins((

@@ -1,5 +1,8 @@
 #![allow(clippy::type_complexity, clippy::too_many_arguments)]
-use bevy::{prelude::*, window::{WindowMode, WindowResolution}};
+use bevy::{
+    prelude::*,
+    window::{WindowMode, WindowResolution},
+};
 use bevy_asset_loader::{
     asset_collection::AssetCollection,
     loading_state::{LoadingState, LoadingStateAppExt, config::ConfigureLoadingState},
@@ -18,6 +21,7 @@ mod main_menu;
 #[cfg(not(target_family = "wasm"))]
 mod particles_plugin;
 mod resources_plugin;
+mod save_plugin;
 mod train_plugin;
 mod ui_state;
 mod world_plugin;
@@ -294,6 +298,7 @@ fn main() {
         #[cfg(not(target_family = "wasm"))]
         particles_plugin::particles_plugin,
         animations::animations_plugin,
+        save_plugin::save_plugin,
     ))
     .init_state::<InGameState>()
     .init_state::<GameState>()

@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::ImageAssets;
 
-#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+#[derive(Eq, PartialEq, Hash, Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub enum Item {
     Food,
     Wood,
@@ -58,7 +58,7 @@ impl Fluid {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct Inventory {
     pub items: HashMap<Item, usize>,
 }

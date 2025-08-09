@@ -22,13 +22,13 @@
     - render this as two layers (one transparent container and one uncolored liquid) so that it can get the color changed at runtime
 
 ## Charlie
+- [ ] Contract punishments
+- [x] game saves
 - [ ] !!!goblin fighting!!!
-- [ ] game saves
 - [ ] craft new birds
 - [ ] Limit to birds (6?)
 - [ ] get resources when the bird return
 - [ ] liquid tank rendering
-- [ ] discord rich presence (this is just a for fun feature)
 - [ ] Building costs
 - [ ] Housing does bad synergy
-- [ ] Contract punishments
+- [ ] discord rich presence (this is just a for fun feature)

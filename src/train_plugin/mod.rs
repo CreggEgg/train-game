@@ -2,7 +2,12 @@ use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets, MainGameObject,
-    build_plugin::{BuildLocation, Building},
+    build_plugin::{
+        BuildLocation, Building,
+        bird_plane::{Bird, Roost},
+        spawn_building,
+    },
+    save_plugin::{GameSave, SavedBuilding},
     world_plugin::{CurrentStop, GenerateNextStop, NextStop},
 };
 
@@ -20,7 +25,7 @@ pub struct TrainLength(pub usize);
 #[derive(Resource)]
 pub struct TrainFuel(pub f32);
 
-#[derive(Resource)]
+#[derive(Resource, serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct TrainStats {
     // pub length: usize,
     pub acceleration: f32,
@@ -33,7 +38,9 @@ impl TrainLength {
     }
 }
 
-#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
+#[derive(
+    States, Debug, Hash, PartialEq, Eq, Clone, Default, serde::Deserialize, serde::Serialize,
+)]
 pub enum TrainState {
     #[default]
     Stopped,
@@ -50,15 +57,13 @@ fn reset_resources(
     mut train_fuel: ResMut<TrainFuel>,
     mut max_pixel_height_of_train: ResMut<MaxPixelHeightOfTrain>,
     mut train_state: ResMut<NextState<TrainState>>,
+    game_save: Res<GameSave>,
 ) {
-    *train_stats = TrainStats {
-        acceleration: 1.0,
-        max_velocity: 27.0,
-    };
-    *train_length = TrainLength(1);
-    *train_fuel = TrainFuel(1000.0);
+    *train_stats = game_save.train_stats.clone();
+    *train_length = TrainLength(game_save.saved_train_cars.len());
+    *train_fuel = TrainFuel(game_save.fuel);
     *max_pixel_height_of_train = MaxPixelHeightOfTrain::default();
-    train_state.set(TrainState::default());
+    train_state.set(game_save.train_state.clone());
 }
 
 pub fn train_plugin(app: &mut App) {
@@ -74,7 +79,7 @@ pub fn train_plugin(app: &mut App) {
         .add_event::<RunOutOfFuelEvent>()
         .init_state::<TrainState>()
         .add_systems(OnEnter(GameState::InGame), spawn_train)
-        .add_systems(OnEnter(GameState::MainMenu), reset_resources)
+        .add_systems(OnEnter(GameState::Loading), reset_resources)
         .add_systems(Update, update_train.run_if(resource_changed::<TrainLength>))
         .add_systems(
             Update,
@@ -111,7 +116,7 @@ pub struct Locomotive;
 pub struct Caboose;
 #[derive(Component)]
 pub struct TrainCar;
-#[derive(Component)]
+#[derive(Component, serde::Deserialize, serde::Serialize, Resource, Debug, Clone)]
 pub struct Train {
     pub distance: f32,
     pub velocity: f32,
@@ -125,47 +130,107 @@ pub struct AdvanceEvent;
 //     stop: Stop,
 //     name: String,
 // }
-
-fn spawn_train(
-    mut commands: Commands,
-    image_assets: Res<ImageAssets>,
-    train_length: Res<TrainLength>,
-) {
-    commands
-        .spawn((
-            Visibility::default(),
-            Transform::default(),
-            Train {
-                distance: 0.,
-                velocity: 0.,
-            },
-            MainGameObject,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Sprite::from_image(image_assets.train_locomotive.clone()),
-                Name::new("Locomotive"),
-                Locomotive,
-            ));
-            for i in 0..train_length.0 {
-                parent.spawn((
-                    Sprite::from_image(image_assets.train_car.clone()),
-                    Name::new(format!("Car{i}")),
-                    TrainCar,
-                    Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
-                    children![
-                        (BuildLocation(Vec2::new(-30.0, 0.0)), Transform::default()),
-                        (BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())
-                    ],
-                ));
-            }
-            parent.spawn((
-                Sprite::from_image(image_assets.train_caboose.clone()),
-                Name::new("Caboose"),
-                Caboose,
-                Transform::from_xyz(CAR_SIZE * (train_length.0 as f32 + 1.), 0., 0.),
-            ));
+//
+fn spawn_saved_building(
+    saved_building: &SavedBuilding,
+    commands: &mut Commands,
+    image_assets: &ImageAssets,
+    offset: Vec2,
+) -> Entity {
+    let building = spawn_building(
+        saved_building.building_type,
+        commands,
+        &image_assets,
+        Vec2::default(),
+    );
+    if let Some(above) = &saved_building.above {
+        let child = spawn_saved_building(
+            &above,
+            commands,
+            image_assets,
+            saved_building.building_type.get_build_locations()[0],
+        );
+        commands.entity(building).add_child(child);
+    }
+    if let Some(inventory) = &saved_building.inventory {
+        commands.entity(building).insert(inventory.clone());
+    }
+    if let Some(roost) = &saved_building.roost {
+        commands.entity(building).insert(Roost {
+            birds: roost
+                .birds
+                .iter()
+                .map(|it| Bird { out: it.out })
+                .collect::<Vec<_>>(),
         });
+    }
+    commands
+        .entity(building)
+        .insert(Transform::from_translation(offset.extend(4.0)));
+
+    building
+}
+
+fn spawn_train(mut commands: Commands, image_assets: Res<ImageAssets>, game_save: Res<GameSave>) {
+    let cars = game_save
+        .saved_train_cars
+        .iter()
+        .enumerate()
+        .map(|(i, train_car)| {
+            let mut children = vec![];
+
+            for i in 0..2 {
+                children.push(if let Some(child) = train_car.children.get(i) {
+                    spawn_saved_building(
+                        child,
+                        &mut commands,
+                        &image_assets,
+                        Vec2::new(30.0 * (i as f32 - 1.), 0.0),
+                    )
+                } else {
+                    commands
+                        .spawn((
+                            BuildLocation(Vec2::new(30.0 * (i as f32 - 1.), 0.0)),
+                            Transform::default(),
+                        ))
+                        .id()
+                });
+            }
+            let mut train_car = commands.spawn((
+                Sprite::from_image(image_assets.train_car.clone()),
+                Name::new(format!("Car{i}")),
+                TrainCar,
+                Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
+                children![(BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())],
+            ));
+            train_car.add_children(&children);
+            train_car.id()
+        })
+        .collect::<Vec<_>>();
+
+    let mut train = commands.spawn((
+        Visibility::default(),
+        Transform::default(),
+        game_save.train.clone(),
+        MainGameObject,
+    ));
+    train.with_child((
+        Sprite::from_image(image_assets.train_locomotive.clone()),
+        Name::new("Locomotive"),
+        Locomotive,
+    ));
+    train.add_children(&cars);
+
+    train.with_child((
+        Sprite::from_image(image_assets.train_caboose.clone()),
+        Name::new("Caboose"),
+        Caboose,
+        Transform::from_xyz(
+            CAR_SIZE * (game_save.saved_train_cars.len() as f32 + 1.),
+            0.,
+            0.,
+        ),
+    ));
 }
 
 fn update_train(

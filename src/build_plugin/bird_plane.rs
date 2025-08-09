@@ -9,12 +9,12 @@ use crate::{
 
 #[derive(Component, Clone)]
 pub struct Roost {
-    birds: Vec<Bird>,
+    pub birds: Vec<Bird>,
 }
 
 #[derive(Component, Clone)]
-struct Bird {
-    out: bool,
+pub struct Bird {
+    pub out: bool,
 }
 
 impl Default for Roost {
@@ -165,12 +165,12 @@ fn send_birds_out(
 }
 
 #[derive(Component)]
-struct BirdTimer(Timer);
+pub struct BirdTimer(Timer);
 #[derive(Component)]
-struct BirdReturnData {
-    location: Vec2,
-    roost: Entity,
-    bird: usize,
+pub struct BirdReturnData {
+    pub location: Vec2,
+    pub roost: Entity,
+    pub bird: usize,
 }
 
 fn update_birds(

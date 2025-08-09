@@ -18,6 +18,7 @@ use crate::{
     animations::Animation,
     consume_resource,
     resources_plugin::{Fluid, Inventory, Item},
+    save_plugin::SavedBuilding,
     train_plugin::TrainState,
     ui_state::InMenu,
 };
@@ -28,11 +29,13 @@ use crate::{
 //     #[default]
 //     NotBuilding,
 // }
-mod bird_plane;
+pub mod bird_plane;
 mod building_menus;
 pub mod synergies;
 
-#[derive(Resource, Clone, Copy, serde::Deserialize, Hash, PartialEq, Eq, Debug)]
+#[derive(
+    Resource, Clone, Copy, serde::Deserialize, Hash, PartialEq, Eq, Debug, serde::Serialize,
+)]
 pub enum BuildingType {
     Housing,
     Farm,
@@ -153,7 +156,7 @@ pub struct BuildLocation(pub Vec2);
 struct GhostBuilding;
 
 #[derive(Component)]
-pub struct Building(BuildingType);
+pub struct Building(pub BuildingType);
 
 #[derive(Component, Clone)]
 pub struct ResourceProduction {
@@ -480,6 +483,85 @@ fn construct_buildings(
     }
 }
 
+pub fn spawn_building(
+    building_type: BuildingType,
+    commands: &mut Commands,
+    image_assets: &ImageAssets,
+    offset: Vec2,
+) -> Entity {
+    let mut building = commands.spawn((
+        MainGameObject,
+        Sprite::from_image(building_type.get_texture(&image_assets)),
+        Transform::from_translation(offset.extend(4.0)),
+        Building(building_type),
+        // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
+        //
+        Pickable::default(),
+    ));
+    if let Some(resource_production) = building_type.get_resource_production().first() {
+        building.insert(resource_production.clone());
+    }
+    building.with_children(|parent| {
+        for build_location in building_type.get_build_locations() {
+            parent.spawn((BuildLocation(build_location), Transform::default()));
+        }
+    });
+    match building_type {
+        BuildingType::Storage => {
+            building.insert(Inventory::default());
+        }
+        BuildingType::LiquidTank => {
+            building.insert(LiquidTank::default());
+        }
+        BuildingType::Roost => {
+            building.insert(Roost::default());
+        }
+
+        BuildingType::AlchemyLab => {
+            building.insert(Animation(
+                vec![
+                    image_assets.alchemy_lab_1.clone(),
+                    image_assets.alchemy_lab_2.clone(),
+                    image_assets.alchemy_lab_3.clone(),
+                    image_assets.alchemy_lab_4.clone(),
+                    image_assets.alchemy_lab_5.clone(),
+                    image_assets.alchemy_lab_6.clone(),
+                    image_assets.alchemy_lab_7.clone(),
+                    image_assets.alchemy_lab_8.clone(),
+                    image_assets.alchemy_lab_9.clone(),
+                    image_assets.alchemy_lab_10.clone(),
+                    image_assets.alchemy_lab_11.clone(),
+                    image_assets.alchemy_lab_12.clone(),
+                    image_assets.alchemy_lab_13.clone(),
+                    image_assets.alchemy_lab_14.clone(),
+                    image_assets.alchemy_lab_15.clone(),
+                    image_assets.alchemy_lab_16.clone(),
+                    image_assets.alchemy_lab_17.clone(),
+                    image_assets.alchemy_lab_18.clone(),
+                ],
+                0,
+            ));
+        }
+        _ => {}
+    }
+
+    let building_id = building.id();
+    building.observe(
+        move |mut trigger: Trigger<Pointer<Click>>,
+              mut selected_building: ResMut<BuildingInspected>,
+              mut menu_state: ResMut<NextState<InMenu>>,
+              current_menu_state: Res<State<InMenu>>| {
+            if let InMenu::None = **current_menu_state {
+                println!("got click");
+                selected_building.0 = Some(building_id);
+                menu_state.set(InMenu::BuildingMenu);
+                trigger.propagate(false);
+            }
+        },
+    );
+    building_id
+}
+
 fn on_build(
     mut ev: EventReader<BuildEvent>,
     parents: Query<Entity, With<Transform>>,
@@ -493,77 +575,8 @@ fn on_build(
     } in ev.read()
     {
         let parent = parents.get(*child_of).unwrap();
-        let mut building = commands.spawn((
-            MainGameObject,
-            Sprite::from_image(building_type.get_texture(&image_assets)),
-            Transform::from_translation(offset.extend(4.0)),
-            Building(*building_type),
-            // children![(BuildLocation(Vec2::new(0., 40.)), Transform::default())],
-            //
-            Pickable::default(),
-        ));
-        if let Some(resource_production) = building_type.get_resource_production().first() {
-            building.insert(resource_production.clone());
-        }
-        building.with_children(|parent| {
-            for build_location in building_type.get_build_locations() {
-                parent.spawn((BuildLocation(build_location), Transform::default()));
-            }
-        });
-        match building_type {
-            BuildingType::Storage => {
-                building.insert(Inventory::default());
-            }
-            BuildingType::LiquidTank => {
-                building.insert(LiquidTank::default());
-            }
-            BuildingType::Roost => {
-                building.insert(Roost::default());
-            }
-
-            BuildingType::AlchemyLab => {
-                building.insert(Animation(
-                    vec![
-                        image_assets.alchemy_lab_1.clone(),
-                        image_assets.alchemy_lab_2.clone(),
-                        image_assets.alchemy_lab_3.clone(),
-                        image_assets.alchemy_lab_4.clone(),
-                        image_assets.alchemy_lab_5.clone(),
-                        image_assets.alchemy_lab_6.clone(),
-                        image_assets.alchemy_lab_7.clone(),
-                        image_assets.alchemy_lab_8.clone(),
-                        image_assets.alchemy_lab_9.clone(),
-                        image_assets.alchemy_lab_10.clone(),
-                        image_assets.alchemy_lab_11.clone(),
-                        image_assets.alchemy_lab_12.clone(),
-                        image_assets.alchemy_lab_13.clone(),
-                        image_assets.alchemy_lab_14.clone(),
-                        image_assets.alchemy_lab_15.clone(),
-                        image_assets.alchemy_lab_16.clone(),
-                        image_assets.alchemy_lab_17.clone(),
-                        image_assets.alchemy_lab_18.clone(),
-                    ],
-                    0,
-                ));
-            }
-            _ => {}
-        }
-
-        let building_id = building.id();
-        building.observe(
-            move |mut trigger: Trigger<Pointer<Click>>,
-                  mut selected_building: ResMut<BuildingInspected>,
-                  mut menu_state: ResMut<NextState<InMenu>>,
-                  current_menu_state: Res<State<InMenu>>| {
-                if let InMenu::None = **current_menu_state {
-                    println!("got click");
-                    selected_building.0 = Some(building_id);
-                    menu_state.set(InMenu::BuildingMenu);
-                    trigger.propagate(false);
-                }
-            },
-        );
-        commands.entity(parent).add_child(building_id);
+        let child = spawn_building(*building_type, &mut commands, &image_assets, *offset);
+        commands.entity(parent).add_child(child);
     }
 }
 

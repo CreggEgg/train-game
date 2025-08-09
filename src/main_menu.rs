@@ -1,6 +1,8 @@
+use std::fs;
+
 use bevy::prelude::*;
 
-use crate::GameState;
+use crate::{GameState, save_plugin::GameSave};
 
 #[derive(Component)]
 struct MainMenu;
@@ -14,46 +16,81 @@ pub fn main_menu_plugin(app: &mut App) {
 }
 
 fn spawn_main_menu(mut commands: Commands) {
-    commands.spawn((
-        MainMenu,
-        Node {
-            width: Val::Vw(100.0),
-            height: Val::Vh(100.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..Default::default()
-        },
-        BackgroundColor(Color::BLACK),
-        children![
-            (
-                Text::new("THE ENGINE OF TOMORROW"),
-                TextFont {
-                    font_size: 128.0,
-                    ..Default::default()
-                },
-                Node {
-                    margin: UiRect::bottom(Val::Vh(20.0)),
-                    ..Default::default()
-                }
-            ),
-            (
-                Button,
-                StartGame,
-                Node {
-                    height: Val::Px(40.0),
-                    display: Display::Flex,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    padding: UiRect::all(Val::Px(5.0)),
-                    ..Default::default()
-                },
-                BackgroundColor(Color::WHITE),
-                children![(Text::new("Start Game"), TextColor(Color::BLACK))]
-            )
-        ],
-    ));
+    commands
+        .spawn((
+            MainMenu,
+            Node {
+                width: Val::Vw(100.0),
+                height: Val::Vh(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..Default::default()
+            },
+            BackgroundColor(Color::BLACK),
+            children![
+                (
+                    Text::new("THE ENGINE OF TOMORROW"),
+                    TextFont {
+                        font_size: 128.0,
+                        ..Default::default()
+                    },
+                    Node {
+                        margin: UiRect::bottom(Val::Vh(20.0)),
+                        ..Default::default()
+                    }
+                ),
+                (
+                    Button,
+                    StartGame,
+                    Node {
+                        height: Val::Px(40.0),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        padding: UiRect::all(Val::Px(5.0)),
+                        ..Default::default()
+                    },
+                    BackgroundColor(Color::WHITE),
+                    children![(Text::new("Start Game"), TextColor(Color::BLACK))]
+                ),
+            ],
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    Button,
+                    Node {
+                        height: Val::Px(40.0),
+                        display: Display::Flex,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        padding: UiRect::all(Val::Px(5.0)),
+                        ..Default::default()
+                    },
+                    BackgroundColor(Color::WHITE),
+                    children![(Text::new("Load save"), TextColor(Color::BLACK))],
+                ))
+                .observe(
+                    |mut trigger: Trigger<Pointer<Pressed>>,
+                     mut commands: Commands,
+                     mut state: ResMut<NextState<GameState>>| {
+                        let Ok(contents) = fs::read("./save.tmrw") else {
+                            error!("Failed to read from save file");
+                            return;
+                        };
+
+                        let Ok(save) = serde_json::from_slice::<GameSave>(&contents) else {
+                            error!("Save contents invalid");
+                            return;
+                        };
+                        info!("loaded save {:?}", &save);
+                        commands.insert_resource(save);
+                        state.set(GameState::Loading);
+                    },
+                );
+        });
 }
 
 fn cleanup_main_menu(mut commands: Commands, elements: Query<Entity, With<MainMenu>>) {
@@ -69,7 +106,7 @@ fn start_button(
         (Changed<Interaction>, With<Button>, With<StartGame>),
     >,
     mut state: ResMut<NextState<GameState>>,
-
+    mut commands: Commands,
     mut text_query: Query<&mut Text>,
 ) {
     for (interaction, children, mut background_color) in &mut interaction_query {
@@ -87,4 +124,5 @@ fn start_button(
             state.set(GameState::Loading);
         }
     }
+    commands.insert_resource(GameSave::default());
 }

@@ -1,0 +1,17 @@
+{
+  "train_stats": {
+    "acceleration": 3.4028235e38,
+    "max_velocity": 27.0
+  },
+  "fuel": 880.54755,
+  "saved_train_cars": [
+    {
+      "children": []
+    }
+  ],
+  "train": {
+    "distance": 119.45287,
+    "velocity": 0.0
+  },
+  "train_state": "Stopped"
+}

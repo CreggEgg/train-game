@@ -497,7 +497,7 @@ struct Workshop {
 impl Default for Workshop {
     fn default() -> Self {
         Self {
-            progress: Timer::new(Duration::from_secs_f32(90.0), TimerMode::Repeating),
+            progress: Timer::new(Duration::from_secs_f32(3.0), TimerMode::Repeating),
         }
     }
 }

@@ -26,7 +26,7 @@
 - [x] game saves
 - [ ] !!!goblin fighting!!!
 - [x] craft new birds
-- [ ] Limit to birds (6?)
+- [x] Limit to birds (6?)
 - [ ] get resources when the bird return
 - [ ] liquid tank rendering
 - [ ] Building costs

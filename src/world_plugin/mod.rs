@@ -292,7 +292,7 @@ fn generate_minecarts(rng: &mut impl Rng) -> Vec<Minecart> {
 
 #[derive(Resource)]
 pub struct GameWorld {
-    rng: rand_chacha::ChaCha8Rng,
+    pub rng: rand_chacha::ChaCha8Rng,
 }
 
 #[derive(Resource)]

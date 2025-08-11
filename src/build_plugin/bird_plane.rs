@@ -1,10 +1,14 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
+use rand::{Rng, seq::IndexedRandom};
 
 use crate::{
-    GameState, ImageAssets, InGameState, MainGameObject, animations::Animation,
+    GameState, ImageAssets, InGameState, MainGameObject,
+    animations::Animation,
+    resources_plugin::{Inventory, Item},
     train_plugin::MaxPixelHeightOfTrain,
+    world_plugin::GameWorld,
 };
 
 #[derive(Component, Clone)]
@@ -91,6 +95,8 @@ fn send_birds_out(
     mut roosts: Query<(&GlobalTransform, &mut Roost)>,
     mut commands: Commands,
     image_assets: Res<ImageAssets>,
+    mut inventories: Query<&mut Inventory>,
+    mut world: ResMut<GameWorld>,
 ) {
     for ev in ev.read() {
         match ev {
@@ -115,10 +121,39 @@ fn send_birds_out(
                 let (_, mut roost) = roosts.get_mut(*roost).unwrap();
                 let bird = roost.birds.get_mut(*bird).unwrap();
                 bird.out = false;
+                let produced_items = {
+                    vec![(
+                        BIRD_REWARDS
+                            .choose_weighted(&mut world.rng, |(_, w)| *w)
+                            .unwrap()
+                            .0
+                            .clone(),
+                        world.rng.random_range(45..500),
+                    )]
+                };
+
+                for (item, amount) in produced_items {
+                    for mut inventory in &mut inventories {
+                        *inventory.items.entry(item.clone()).or_insert(0) += amount;
+                        break;
+                    }
+                }
             }
         };
     }
 }
+
+const BIRD_REWARDS: &[(Item, usize)] = &[
+    (Item::Food, 1),
+    (Item::Wood, 1),
+    (Item::Clay, 1),
+    (Item::Brick, 1),
+    (Item::Stone, 1),
+    (Item::Metal, 1),
+    (Item::Glass, 1),
+    (Item::Bullet, 1),
+    (Item::Money, 1),
+];
 
 #[derive(Component)]
 pub struct BirdTimer(pub Timer);

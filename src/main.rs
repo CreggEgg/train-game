@@ -20,6 +20,7 @@ mod goblins;
 mod main_menu;
 #[cfg(not(target_family = "wasm"))]
 mod particles_plugin;
+mod pause_menu;
 mod resources_plugin;
 mod save_plugin;
 mod train_plugin;
@@ -299,6 +300,7 @@ fn main() {
         particles_plugin::particles_plugin,
         animations::animations_plugin,
         save_plugin::save_plugin,
+        pause_menu::pause_menu_plugin,
     ))
     .init_state::<InGameState>()
     .init_state::<GameState>()

@@ -3,15 +3,45 @@
     "acceleration": 3.4028235e38,
     "max_velocity": 27.0
   },
-  "fuel": 880.54755,
+  "fuel": 1000.0,
   "saved_train_cars": [
     {
-      "children": []
+      "children": [
+        {
+          "building_type": "Roost",
+          "above": null,
+          "inventory": null,
+          "roost": {
+            "birds": [
+              {
+                "out": true,
+                "time_progress_secs": 0.0,
+                "return_location": [
+                  -30.0,
+                  0.0
+                ],
+                "roost": 19,
+                "bird_index": 0,
+                "current_translation": [
+                  114.0,
+                  207.85432
+                ]
+              }
+            ],
+            "id": 19
+          }
+        }
+      ]
     }
   ],
   "train": {
-    "distance": 119.45287,
+    "distance": 0.0,
     "velocity": 0.0
   },
-  "train_state": "Stopped"
+  "train_state": "Stopped",
+  "unlocked_buildings": [
+    "Farm",
+    "Storage",
+    "Roost"
+  ]
 }

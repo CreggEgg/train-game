@@ -103,56 +103,14 @@ fn send_birds_out(
                 let (transform, mut roost) = roosts.get_mut(*roost_entity).unwrap();
                 let bird = roost.birds.get_mut(*bird_idx).unwrap();
                 bird.out = true;
-                commands.spawn((
-                    MainGameObject,
-                    bird.clone(),
-                    Transform::from_translation(transform.translation() + Vec3::Y * 40.0),
-                    Sprite::from_image(image_assets.bird_plane_away_1.clone()),
-                    BirdTimer(Timer::new(Duration::from_secs_f32(3.0), TimerMode::Once)),
-                    BirdReturnData {
-                        location: transform.translation().xy() + Vec2::Y * 30.0,
-                        roost: *roost_entity,
-                        bird: *bird_idx,
-                    },
-                    Animation(
-                        vec![
-                            image_assets.bird_plane_away_1.clone(),
-                            image_assets.bird_plane_away_2.clone(),
-                            image_assets.bird_plane_away_3.clone(),
-                            image_assets.bird_plane_away_4.clone(),
-                            image_assets.bird_plane_away_5.clone(),
-                            image_assets.bird_plane_away_6.clone(),
-                            image_assets.bird_plane_away_7.clone(),
-                            image_assets.bird_plane_away_8.clone(),
-                            image_assets.bird_plane_away_9.clone(),
-                            image_assets.bird_plane_away_10.clone(),
-                            image_assets.bird_plane_away_11.clone(),
-                            image_assets.bird_plane_away_12.clone(),
-                            image_assets.bird_plane_away_13.clone(),
-                            image_assets.bird_plane_away_14.clone(),
-                            image_assets.bird_plane_away_15.clone(),
-                            image_assets.bird_plane_away_16.clone(),
-                            image_assets.bird_plane_away_17.clone(),
-                            image_assets.bird_plane_away_18.clone(),
-                            image_assets.bird_plane_away_19.clone(),
-                            image_assets.bird_plane_away_20.clone(),
-                            image_assets.bird_plane_away_21.clone(),
-                            image_assets.bird_plane_away_22.clone(),
-                            image_assets.bird_plane_away_23.clone(),
-                            image_assets.bird_plane_away_24.clone(),
-                            image_assets.bird_plane_away_25.clone(),
-                            image_assets.bird_plane_away_26.clone(),
-                            image_assets.bird_plane_away_27.clone(),
-                            image_assets.bird_plane_away_28.clone(),
-                            image_assets.bird_plane_away_29.clone(),
-                            image_assets.bird_plane_away_30.clone(),
-                            image_assets.bird_plane_away_31.clone(),
-                            image_assets.bird_plane_away_32.clone(),
-                            image_assets.bird_plane_away_33.clone(),
-                            image_assets.bird_plane_away_34.clone(),
-                        ],
-                        0,
-                    ),
+                commands.spawn(spawn_bird(
+                    bird,
+                    transform.translation().xy() + Vec2::Y * 40.0,
+                    transform.translation().xy() + Vec2::Y * 30.0,
+                    &image_assets,
+                    *roost_entity,
+                    *bird_idx,
+                    Duration::ZERO,
                 ));
             }
             BirdEvent::Return { bird, roost } => {
@@ -165,7 +123,7 @@ fn send_birds_out(
 }
 
 #[derive(Component)]
-pub struct BirdTimer(Timer);
+pub struct BirdTimer(pub Timer);
 #[derive(Component)]
 pub struct BirdReturnData {
     pub location: Vec2,
@@ -195,4 +153,72 @@ fn update_birds(
             }
         }
     }
+}
+
+pub fn spawn_bird(
+    bird: &Bird,
+    translation: Vec2,
+    return_translation: Vec2,
+    image_assets: &ImageAssets,
+    roost_entity: Entity,
+    bird_index: usize,
+    time_progress: Duration,
+) -> impl Bundle {
+    (
+        MainGameObject,
+        bird.clone(),
+        Transform::from_translation(
+            translation.extend(4.0), /* transform.translation() + Vec3::Y * 40.0 */
+        ),
+        Sprite::from_image(image_assets.bird_plane_away_1.clone()),
+        BirdTimer(
+            Timer::new(Duration::from_secs_f32(3.0), TimerMode::Once)
+                .tick(time_progress)
+                .clone(),
+        ),
+        BirdReturnData {
+            location: return_translation, /* transform.translation().xy() + Vec2::Y * 30.0 */
+            roost: roost_entity,
+            bird: bird_index,
+        },
+        Animation(
+            vec![
+                image_assets.bird_plane_away_1.clone(),
+                image_assets.bird_plane_away_2.clone(),
+                image_assets.bird_plane_away_3.clone(),
+                image_assets.bird_plane_away_4.clone(),
+                image_assets.bird_plane_away_5.clone(),
+                image_assets.bird_plane_away_6.clone(),
+                image_assets.bird_plane_away_7.clone(),
+                image_assets.bird_plane_away_8.clone(),
+                image_assets.bird_plane_away_9.clone(),
+                image_assets.bird_plane_away_10.clone(),
+                image_assets.bird_plane_away_11.clone(),
+                image_assets.bird_plane_away_12.clone(),
+                image_assets.bird_plane_away_13.clone(),
+                image_assets.bird_plane_away_14.clone(),
+                image_assets.bird_plane_away_15.clone(),
+                image_assets.bird_plane_away_16.clone(),
+                image_assets.bird_plane_away_17.clone(),
+                image_assets.bird_plane_away_18.clone(),
+                image_assets.bird_plane_away_19.clone(),
+                image_assets.bird_plane_away_20.clone(),
+                image_assets.bird_plane_away_21.clone(),
+                image_assets.bird_plane_away_22.clone(),
+                image_assets.bird_plane_away_23.clone(),
+                image_assets.bird_plane_away_24.clone(),
+                image_assets.bird_plane_away_25.clone(),
+                image_assets.bird_plane_away_26.clone(),
+                image_assets.bird_plane_away_27.clone(),
+                image_assets.bird_plane_away_28.clone(),
+                image_assets.bird_plane_away_29.clone(),
+                image_assets.bird_plane_away_30.clone(),
+                image_assets.bird_plane_away_31.clone(),
+                image_assets.bird_plane_away_32.clone(),
+                image_assets.bird_plane_away_33.clone(),
+                image_assets.bird_plane_away_34.clone(),
+            ],
+            0,
+        ),
+    )
 }

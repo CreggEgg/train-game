@@ -10,6 +10,7 @@ use crate::{
     consume_resource,
     control_panel_plugin::AdvanceBlocker,
     resources_plugin::{Inventory, Item},
+    save_plugin::GameSave,
     train_plugin::{TrainFuel, TrainLength, TrainState},
     ui_state::InMenu,
     world_plugin::{self},
@@ -28,6 +29,12 @@ pub fn stop_plugin(app: &mut App) {
         .insert_resource(ActiveContracts(Vec::new()))
         .insert_resource(FadeTime { time: 0. })
         .add_systems(OnEnter(GameState::MainMenu), reset_resources)
+        .add_systems(
+            OnEnter(GameState::InGame),
+            |game_save: Res<GameSave>, mut active_contracts: ResMut<ActiveContracts>| {
+                *active_contracts = game_save.contracts.clone();
+            },
+        )
         .add_systems(
             OnEnter(InMenu::StopMenu),
             |mut menu: Single<&mut Visibility, With<StopMenu>>| {
@@ -67,10 +74,10 @@ pub fn stop_plugin(app: &mut App) {
         .add_systems(OnEnter(TrainState::Arriving), spawn_town_arrival_text);
 }
 
-#[derive(Resource)]
+#[derive(Resource, serde::Deserialize, serde::Serialize, Debug, Clone)]
 pub struct ActiveContracts(pub Vec<Contract>);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Contract {
     pub required: (Item, usize),
     pub reward: (Item, usize),

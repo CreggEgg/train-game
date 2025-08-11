@@ -1,10 +1,12 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
 use crate::{
     GameState, ImageAssets, MainGameObject,
     build_plugin::{
         BuildLocation, Building,
-        bird_plane::{Bird, Roost},
+        bird_plane::{Bird, Roost, spawn_bird},
         spawn_building,
     },
     save_plugin::{GameSave, SavedBuilding},
@@ -156,13 +158,24 @@ fn spawn_saved_building(
         commands.entity(building).insert(inventory.clone());
     }
     if let Some(roost) = &saved_building.roost {
-        commands.entity(building).insert(Roost {
-            birds: roost
-                .birds
-                .iter()
-                .map(|it| Bird { out: it.out })
-                .collect::<Vec<_>>(),
-        });
+        let mut in_birds = Vec::new();
+        for bird in &roost.birds {
+            if !bird.out {
+                in_birds.push(Bird { out: false })
+            } else {
+                in_birds.push(Bird { out: true });
+                commands.spawn(spawn_bird(
+                    &Bird { out: true },
+                    bird.current_translation,
+                    bird.return_location,
+                    image_assets,
+                    building,
+                    bird.bird_index,
+                    Duration::from_secs_f32(bird.time_progress_secs),
+                ));
+            }
+        }
+        commands.entity(building).insert(Roost { birds: in_birds });
     }
     commands
         .entity(building)

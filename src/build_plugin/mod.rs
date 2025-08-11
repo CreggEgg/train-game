@@ -18,7 +18,7 @@ use crate::{
     animations::Animation,
     consume_resource,
     resources_plugin::{Fluid, Inventory, Item},
-    save_plugin::SavedBuilding,
+    save_plugin::{GameSave, SavedBuilding},
     train_plugin::TrainState,
     ui_state::InMenu,
 };
@@ -49,7 +49,7 @@ pub enum BuildingType {
     Factory,
 }
 
-#[derive(Resource)]
+#[derive(serde::Deserialize, serde::Serialize, Resource, Debug, Clone)]
 pub struct UnlockedBuildings(pub Vec<BuildingType>);
 
 impl BuildingType {
@@ -199,6 +199,12 @@ pub fn build_plugin(app: &mut App) {
             bird_plane::bird_plane_plugin,
             synergies::synergies_plugin,
         ))
+        .add_systems(
+            OnEnter(GameState::InGame),
+            |mut unlocked_buildings: ResMut<UnlockedBuildings>, game_save: Res<GameSave>| {
+                *unlocked_buildings = game_save.unlocked_buildings.clone();
+            },
+        )
         .add_systems(OnEnter(GameState::MainMenu), reset_resources)
         .add_systems(
             Update,

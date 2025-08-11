@@ -5,19 +5,27 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use crate::{
     GameState,
     build_plugin::{
-        BuildLocation, Building, BuildingType,
+        BuildLocation, Building, BuildingType, UnlockedBuildings,
         bird_plane::{Bird, BirdReturnData, BirdTimer, Roost},
     },
     resources_plugin::Inventory,
     train_plugin::{Train, TrainCar, TrainFuel, TrainState, TrainStats},
+    world_plugin::stop_plugin::ActiveContracts,
 };
 
+#[derive(Resource)]
+struct SaveTimer(Timer);
+
+#[derive(Event)]
+pub struct SaveEvent;
+
 pub fn save_plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        save_game_data
-            .run_if(on_timer(Duration::from_secs_f32(1.0)).and(in_state(GameState::InGame))),
-    );
+    app.add_systems(Update, save_game_data.run_if(in_state(GameState::InGame)))
+        .insert_resource(SaveTimer(Timer::new(
+            Duration::from_secs_f32(90.0),
+            TimerMode::Repeating,
+        )))
+        .add_event::<SaveEvent>();
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Resource, Debug)]
@@ -27,6 +35,8 @@ pub struct GameSave {
     pub saved_train_cars: Vec<SavedTrainCar>,
     pub train: Train,
     pub train_state: TrainState,
+    pub unlocked_buildings: UnlockedBuildings,
+    pub contracts: ActiveContracts,
 }
 
 impl Default for GameSave {
@@ -43,6 +53,12 @@ impl Default for GameSave {
                 velocity: 0.0,
             },
             train_state: TrainState::Stopped,
+            unlocked_buildings: UnlockedBuildings(vec![
+                BuildingType::Farm,
+                BuildingType::Storage,
+                BuildingType::Roost,
+            ]),
+            contracts: ActiveContracts(Vec::new()),
         }
     }
 }
@@ -114,9 +130,11 @@ pub struct SavedBuilding {
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct SavedBird {
     pub out: bool,
-    pub remaining_secs: f32,
+    pub time_progress_secs: f32,
     pub return_location: Vec2,
     pub roost: u32,
+    pub bird_index: usize,
+    pub current_translation: Vec2,
 }
 
 impl From<Roost> for SavedRoost {
@@ -138,10 +156,26 @@ fn save_game_data(
         Option<&Roost>,
         Option<&Transform>,
     )>,
-    birds: Query<(&BirdTimer, &BirdReturnData), With<Bird>>,
+    birds: Query<(&BirdTimer, &BirdReturnData, &Transform), With<Bird>>,
     mut commands: Commands,
     train_state: Res<State<TrainState>>,
+    time: Res<Time>,
+    mut save_timer: ResMut<SaveTimer>,
+    mut ev: EventReader<SaveEvent>,
+    unlocked_buildings: Res<UnlockedBuildings>,
+    active_contracts: Res<ActiveContracts>,
 ) {
+    if !save_timer.0.tick(time.delta()).just_finished() && {
+        let mut any_events = false;
+        for _ in ev.read() {
+            any_events = true;
+            break;
+        }
+
+        !any_events
+    } {
+        return;
+    }
     let mut saved_train_cars: Vec<SavedTrainCar> = Vec::new();
     for train_car in &train_cars {
         let mut buildings = train_car
@@ -157,7 +191,7 @@ fn save_game_data(
                         Option<&Roost>,
                         Option<&Transform>,
                     )>,
-                    birds: Query<(&BirdTimer, &BirdReturnData), With<Bird>>,
+                    birds: Query<(&BirdTimer, &BirdReturnData, &Transform), With<Bird>>,
                     commands: &mut Commands,
                 ) -> Option<SavedBuilding> {
                     let (is_build_location, children, building, inventory, roost, transform) =
@@ -187,11 +221,27 @@ fn save_game_data(
                             birds: roost
                                 .birds
                                 .iter()
-                                .map(|it| SavedBird {
-                                    out: false,
-                                    remaining_secs: 0.0,
-                                    return_location: transform.unwrap().translation.xy(),
-                                    roost: building_id.index(),
+                                .enumerate()
+                                .map(|(idx, it)| {
+                                    let outside_bird = birds
+                                        .iter()
+                                        .filter(|(_, return_data, _)| {
+                                            return_data.bird == idx
+                                                && return_data.roost == building_id
+                                        })
+                                        .nth(0);
+                                    SavedBird {
+                                        out: it.out,
+                                        time_progress_secs: outside_bird
+                                            .map(|it| it.0.0.elapsed_secs())
+                                            .unwrap_or_default(),
+                                        return_location: transform.unwrap().translation.xy(),
+                                        roost: building_id.index(),
+                                        bird_index: idx,
+                                        current_translation: outside_bird
+                                            .map(|it| it.2.translation.xy())
+                                            .unwrap_or(transform.unwrap().translation.xy()), //transform.unwrap().translation.xy(),
+                                    }
                                 })
                                 .collect::<Vec<_>>(),
                             id: building_id.index(),
@@ -212,6 +262,8 @@ fn save_game_data(
         saved_train_cars,
         train_state: train_state.clone(),
         train: train.clone(),
+        unlocked_buildings: unlocked_buildings.clone(),
+        contracts: active_contracts.clone(),
     };
 
     info!("saved");

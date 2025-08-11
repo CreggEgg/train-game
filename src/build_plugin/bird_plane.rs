@@ -19,9 +19,7 @@ pub struct Bird {
 
 impl Default for Roost {
     fn default() -> Self {
-        Self {
-            birds: vec![Bird { out: false }],
-        }
+        Self { birds: vec![] }
     }
 }
 

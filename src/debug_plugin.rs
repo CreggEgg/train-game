@@ -6,19 +6,20 @@ use crate::{
     GameState,
     build_plugin::{BuildLocation, MAX_CONSTRUCTION_SNAPPING, synergies::Synergized},
     goblins::Goblin,
-    resources_plugin::Item,
+    resources_plugin::{Inventory, Item},
     train_plugin::TrainStats,
     world_plugin::stop_plugin::{ActiveContracts, Contract},
 };
 
 const SKIP_MAIN_MENU: bool = false;
 // const LOG_DISTANCE: bool = true;
-const BUILD_LOCATION_GIZMO: bool = false;
+const BUILD_LOCATION_GIZMO: bool = true;
 const ZOOM_CAMERA_OUT: bool = true;
 const GOBLIN_KILL: bool = true;
 const START_WITH_CONTRACT: bool = true;
 const SYNERGY_VISUALIZATION: bool = true; // const START_WITH_MONEY: bool = true;
 const INFINITE_TRAIN_SPEED: bool = true; // const START_WITH_MONEY: bool = true;
+const CREATIVE_MODE: bool = true; // const START_WITH_MONEY: bool = true;
 
 pub fn debug_plugin(app: &mut App) {
     if SKIP_MAIN_MENU {
@@ -44,6 +45,9 @@ pub fn debug_plugin(app: &mut App) {
             Update,
             set_train_speed.run_if(resource_exists::<TrainStats>),
         );
+    }
+    if CREATIVE_MODE {
+        app.add_systems(Update, give_items);
     }
     // if START_WITH_MONEY {
     //     app.add_systems(OnEnter(GameState::InGame), give_debug_money);
@@ -125,4 +129,20 @@ fn synergy_gizmo(mut gizmos: Gizmos, synergies: Query<&GlobalTransform, With<Syn
 //
 fn set_train_speed(mut train_stats: ResMut<TrainStats>) {
     train_stats.acceleration = f32::MAX;
+}
+
+fn give_items(mut inventories: Query<&mut Inventory>, buttons: Res<ButtonInput<KeyCode>>) {
+    let mut produced_items = vec![];
+    if buttons.just_pressed(KeyCode::KeyC) {
+        produced_items.push((Item::Money, 25));
+    }
+    if buttons.just_pressed(KeyCode::KeyM) {
+        produced_items.push((Item::Metal, 25));
+    }
+    for (item, amount) in produced_items {
+        for mut inventory in &mut inventories {
+            *inventory.items.entry(item.clone()).or_insert(0) += amount;
+            break;
+        }
+    }
 }

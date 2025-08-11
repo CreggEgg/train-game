@@ -47,7 +47,7 @@ impl Default for GameSave {
                 max_velocity: 27.0,
             },
             fuel: 1000.0,
-            saved_train_cars: vec![SavedTrainCar::default()],
+            saved_train_cars: vec![SavedTrainCar::default(), SavedTrainCar::default()],
             train: Train {
                 distance: 0.0,
                 velocity: 0.0,
@@ -57,6 +57,7 @@ impl Default for GameSave {
                 BuildingType::Farm,
                 BuildingType::Storage,
                 BuildingType::Roost,
+                BuildingType::Workshop,
             ]),
             contracts: ActiveContracts(Vec::new()),
         }

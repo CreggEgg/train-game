@@ -1,6 +1,10 @@
 use std::f32::consts::PI;
 
-use bevy::{ecs::entity, prelude::*, render::{camera::Viewport, view::visibility}};
+use bevy::{
+    ecs::entity,
+    prelude::*,
+    render::{camera::Viewport, view::visibility},
+};
 use lerp;
 
 use crate::{
@@ -63,14 +67,16 @@ struct AnimTimer {
 #[derive(Resource)]
 struct LastStopDist(f32);
 
-
 const MAP_PIN_OFFSET_RIGHT: f32 = -12.;
 const MAP_PIN_OFFSET_LEFT: f32 = -28.;
 const MAP_LOCO_OFFSET_RIGHT: f32 = -69.1;
 const MAP_LOCO_OFFSET_LEFT: f32 = -84.5;
 
-
-fn spawn_progress_bar(mut commands: Commands, image_assets: Res<ImageAssets>, window_query: Query<&Window>) {
+fn spawn_progress_bar(
+    mut commands: Commands,
+    image_assets: Res<ImageAssets>,
+    window_query: Query<&Window>,
+) {
     let window = window_query.single().unwrap();
     let bar_width = window.resolution.width() * 0.6;
     //println!("{}", bar_width);
@@ -162,7 +168,9 @@ fn update_progress_bar(
         for mut map_loco in &mut map_loco_query {
             map_loco.right = Val::Px(
                 MAP_LOCO_OFFSET_RIGHT.lerp((bar_width + MAP_LOCO_OFFSET_LEFT), train_progress)
-                    - ((sinerp((anim_timer.right_slide_amount + width_travel) / width_travel) * width_travel) - width_travel),
+                    - ((sinerp((anim_timer.right_slide_amount + width_travel) / width_travel)
+                        * width_travel)
+                        - width_travel),
             );
             // map_loco.right = Val::Percent(
             //     full_right.lerp(full_left, train_progress)
@@ -178,8 +186,7 @@ fn update_progress_bar(
                 map_pin.0.height = Val::Px(512.0 * 0.08);
                 map_pin.0.bottom = Val::Percent(47.0);
                 map_pin.0.right = Val::Px(MAP_PIN_OFFSET_RIGHT);
-            }
-            else {
+            } else {
                 map_pin.0.width = Val::Px(512.0 * 0.08);
                 map_pin.0.height = Val::Px(512.0 * 0.08);
                 map_pin.0.bottom = Val::Percent(47.0);
@@ -195,8 +202,7 @@ fn update_progress_bar(
                 map_pin.0.height = Val::Px(512.0 * 0.08);
                 map_pin.0.bottom = Val::Percent(47.0);
                 map_pin.0.right = Val::Px(MAP_PIN_OFFSET_RIGHT);
-            }
-            else {
+            } else {
                 map_pin.0.width = Val::Px(512.0 * 0.08);
                 map_pin.0.height = Val::Px(512.0 * 0.08);
                 map_pin.0.bottom = Val::Percent(47.0);
@@ -206,7 +212,11 @@ fn update_progress_bar(
     }
 }
 
-fn start_anim_timer(mut anim_timer: ResMut<AnimTimer>, current_stop: Res<CurrentStop>, window_query: Query<&Window>) {
+fn start_anim_timer(
+    mut anim_timer: ResMut<AnimTimer>,
+    current_stop: Res<CurrentStop>,
+    window_query: Query<&Window>,
+) {
     if matches!(current_stop.0, Some(NumberedStop(Stop::Initial, _)) | None) {
         return;
     }
@@ -242,7 +252,10 @@ fn animate_progress_bar(
                 map_pin.0.width = Val::Px(full_width * sinerp((0.5 - anim_timer.time) * 2.));
                 map_pin.0.height = Val::Px(full_width * sinerp((0.5 - anim_timer.time) * 2.));
                 map_pin.0.bottom = Val::Percent(47.0.lerp(70., sinerp(anim_timer.time * 2.)));
-                map_pin.0.right = Val::Px(MAP_PIN_OFFSET_RIGHT.lerp(MAP_PIN_OFFSET_RIGHT*(-1.1/1.6), sinerp(anim_timer.time * 2.)));
+                map_pin.0.right = Val::Px(MAP_PIN_OFFSET_RIGHT.lerp(
+                    MAP_PIN_OFFSET_RIGHT * (-1.1 / 1.6),
+                    sinerp(anim_timer.time * 2.),
+                ));
             }
         }
     }
@@ -253,8 +266,10 @@ fn animate_progress_bar(
 
         for mut map_pin in &mut map_pin_query {
             if !map_pin.1.right {
-                map_pin.0.right =
-                    Val::Px((bar_width + MAP_PIN_OFFSET_LEFT).lerp(MAP_PIN_OFFSET_RIGHT, sinerp((anim_timer.time - 0.5) / 1.)));
+                map_pin.0.right = Val::Px(
+                    (bar_width + MAP_PIN_OFFSET_LEFT)
+                        .lerp(MAP_PIN_OFFSET_RIGHT, sinerp((anim_timer.time - 0.5) / 1.)),
+                );
             }
         }
     }
@@ -275,8 +290,10 @@ fn animate_progress_bar(
                 map_pin.0.height = Val::Px(full_width * sinerp((anim_timer.time - 1.5) * 2.));
                 map_pin.0.bottom =
                     Val::Percent(70.0.lerp(47., sinerp((anim_timer.time - 1.5) * 2.)));
-                map_pin.0.right =
-                    Val::Px(((bar_width + MAP_PIN_OFFSET_LEFT)*99.1/96.4).lerp(bar_width + MAP_PIN_OFFSET_LEFT, sinerp((anim_timer.time - 1.5) * 2.)));
+                map_pin.0.right = Val::Px(((bar_width + MAP_PIN_OFFSET_LEFT) * 99.1 / 96.4).lerp(
+                    bar_width + MAP_PIN_OFFSET_LEFT,
+                    sinerp((anim_timer.time - 1.5) * 2.),
+                ));
             }
         }
     }

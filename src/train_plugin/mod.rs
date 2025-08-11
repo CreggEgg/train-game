@@ -198,12 +198,12 @@ fn spawn_train(mut commands: Commands, image_assets: Res<ImageAssets>, game_save
                         child,
                         &mut commands,
                         &image_assets,
-                        Vec2::new(30.0 * (i as f32 - 1.), 0.0),
+                        Vec2::new(30.0 * ((i as f32 - 0.5) * 2.0), 0.0),
                     )
                 } else {
                     commands
                         .spawn((
-                            BuildLocation(Vec2::new(30.0 * (i as f32 - 1.), 0.0)),
+                            BuildLocation(Vec2::new(30.0 * ((i as f32 - 0.5) * 2.0), 0.0)),
                             Transform::default(),
                         ))
                         .id()
@@ -214,7 +214,7 @@ fn spawn_train(mut commands: Commands, image_assets: Res<ImageAssets>, game_save
                 Name::new(format!("Car{i}")),
                 TrainCar,
                 Transform::from_xyz(CAR_SIZE * (i as f32 + 1.), 0., 0.),
-                children![(BuildLocation(Vec2::new(30.0, 0.0)), Transform::default())],
+                children![],
             ));
             train_car.add_children(&children);
             train_car.id()

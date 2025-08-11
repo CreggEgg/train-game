@@ -320,9 +320,9 @@ fn spawn_stop_menu(
                     Node {
                         display: Display::Grid,
                         width: Val::Px(CONTRACT_WIDTH * 6.),
-                        aspect_ratio: Some(1.7),
+                        aspect_ratio: Some(4.0),
 
-                        grid_template_columns: RepeatedGridTrack::flex(4, 1.0),
+                        grid_template_columns: RepeatedGridTrack::flex(6, 1.0),
                         row_gap: Val::Px(0.0),
                         column_gap: Val::Px(0.0),
                         // Set the grid to have 4 rows all with sizes minmax(0, 1fr)

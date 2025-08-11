@@ -9,7 +9,7 @@ use bevy::{
     prelude::*,
     window::PrimaryWindow,
 };
-use bird_plane::Roost;
+use bird_plane::{Bird, Roost};
 use building_menus::BuildingInspected;
 use synergies::Synergized;
 
@@ -67,7 +67,7 @@ impl BuildingType {
     pub fn get_build_locations(&self) -> Vec<Vec2> {
         match self {
             BuildingType::Farm => vec![],
-            BuildingType::Workshop => vec![],
+            // BuildingType::Workshop => vec![],
             BuildingType::Roost => vec![],
             _ => vec![Vec2::new(0., 45.)],
         }
@@ -260,7 +260,7 @@ pub fn build_plugin(app: &mut App) {
         )
         .add_systems(
             FixedUpdate,
-            produce_resources.run_if(
+            (produce_resources, operate_workshops).chain().run_if(
                 in_state(GameState::InGame)
                     .and(in_state(InGameState::Running))
                     .and(in_state(TrainState::Advancing)),
@@ -489,6 +489,19 @@ fn construct_buildings(
     }
 }
 
+#[derive(Component)]
+struct Workshop {
+    progress: Timer,
+}
+
+impl Default for Workshop {
+    fn default() -> Self {
+        Self {
+            progress: Timer::new(Duration::from_secs_f32(90.0), TimerMode::Repeating),
+        }
+    }
+}
+
 pub fn spawn_building(
     building_type: BuildingType,
     commands: &mut Commands,
@@ -521,6 +534,9 @@ pub fn spawn_building(
         }
         BuildingType::Roost => {
             building.insert(Roost::default());
+        }
+        BuildingType::Workshop => {
+            building.insert(Workshop::default());
         }
 
         BuildingType::AlchemyLab => {
@@ -614,6 +630,37 @@ fn produce_resources(
         for mut inventory in &mut inventories {
             *inventory.items.entry(item.clone()).or_insert(0) += amount;
             break;
+        }
+    }
+}
+
+fn operate_workshops(
+    mut workshops: Query<(&mut Workshop, &Children)>,
+    mut roosts: Query<&mut Roost, Without<Workshop>>,
+    mut inventories: Query<&mut Inventory>,
+    time: Res<Time>,
+) {
+    for (mut workshop, children) in &mut workshops {
+        let Some(child) = children.get(0) else {
+            continue;
+        };
+        let Ok(mut roost) = roosts.get_mut(*child) else {
+            continue;
+        };
+        if workshop.progress.tick(time.delta()).just_finished() {
+            consume_resource!(
+                Item::Metal,
+                25,
+                inventories,
+                {
+                    info!("Failed to produce output");
+                    continue;
+                },
+                {
+                    info!("Succeeded in producing output");
+                    roost.birds.push(Bird { out: false });
+                }
+            );
         }
     }
 }

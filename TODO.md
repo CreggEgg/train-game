@@ -25,7 +25,7 @@
 - [ ] Contract punishments
 - [x] game saves
 - [ ] !!!goblin fighting!!!
-- [ ] craft new birds
+- [x] craft new birds
 - [ ] Limit to birds (6?)
 - [ ] get resources when the bird return
 - [ ] liquid tank rendering

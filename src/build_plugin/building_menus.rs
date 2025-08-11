@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::tailwind::GREEN_200, prelude::*};
 
 use crate::{
     FontAssets, GameState, ImageAssets, MainGameObject, resources_plugin::Inventory,
@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    Building, LiquidTank, ResourceProduction,
+    Building, LiquidTank, ResourceProduction, Workshop,
     bird_plane::{Roost, roost_menu},
 };
 
@@ -118,6 +118,7 @@ fn update_inspected_building(
         Option<&mut Roost>,
         Option<&ResourceProduction>,
         Option<&LiquidTank>,
+        Option<&Workshop>,
     )>,
     building_menu_slot: Single<Entity, With<BuildingMenuSlot>>,
     mut commands: Commands,
@@ -127,8 +128,15 @@ fn update_inspected_building(
     let Some(entity) = inspected_building.0 else {
         return;
     };
-    let Ok((building_entity, building, inventory, roost, resource_production, liquid_tank)) =
-        buildings.get_mut(entity)
+    let Ok((
+        building_entity,
+        building,
+        inventory,
+        roost,
+        resource_production,
+        liquid_tank,
+        workshop,
+    )) = buildings.get_mut(entity)
     else {
         inspected_building.0 = None;
         return;
@@ -166,8 +174,8 @@ fn update_inspected_building(
                 super::BuildingType::LiquidTank => {
                     let liquid_tank = liquid_tank.unwrap();
                     parent.spawn((Text::new(format!("{}/{} L {}", 
-                        liquid_tank.contained_liters, 
-                        liquid_tank.max_liters, 
+                        liquid_tank.contained_liters,
+                        liquid_tank.max_liters,
                         if let Some(contained) = &liquid_tank.contained_fluid {
                             contained.name()
                         } else {
@@ -176,6 +184,22 @@ fn update_inspected_building(
                 }
                 super::BuildingType::Roost => {
                     roost_menu(parent, &roost.unwrap(), building_entity);
+                }
+                super::BuildingType::Workshop => {
+                    let workshop = workshop.unwrap();
+                    parent.spawn((Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(60.0),
+                        ..Default::default()},
+                        BackgroundColor(Color::BLACK), children!
+                        [
+                            (Node {
+                                width: Val::Percent(100.0 * (workshop.progress.elapsed_secs() / workshop.progress.duration().as_secs_f32())),
+                                height: Val::Percent(100.0),
+                                ..Default::default()
+                            }, 
+                            BackgroundColor(GREEN_200.into()))
+                    ]));
                 }
                 super::BuildingType::AlchemyLab => {
                     parent

@@ -647,7 +647,7 @@ fn operate_workshops(
         let Ok(mut roost) = roosts.get_mut(*child) else {
             continue;
         };
-        if workshop.progress.tick(time.delta()).just_finished() {
+        if roost.birds.len() < 6 && workshop.progress.tick(time.delta()).just_finished() {
             consume_resource!(
                 Item::Metal,
                 25,

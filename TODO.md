@@ -27,7 +27,7 @@
 - [ ] !!!goblin fighting!!!
 - [x] craft new birds
 - [x] Limit to birds (6?)
-- [ ] get resources when the bird return
+- [x] get resources when the bird return
 - [ ] liquid tank rendering
 - [ ] Building costs
 - [ ] Housing does bad synergy
